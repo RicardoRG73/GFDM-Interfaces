@@ -53,7 +53,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.1
+mesh.el_size_factor = 1
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -99,6 +99,21 @@ plot_nodes(
     alpha=0.5
 )
 
+""" Problem parameters """
+k0 = 1
+k1 = 1
+material_properties = {}
+material_properties["0"] = [k0, bm0]
+material_properties["1"] = [k1, bm1]
 
+from GFDMI import create_system_K_F
+K,F = create_system_K_F(
+    p=coords,
+    material_properties=material_properties,
+    triangles=faces
+)
+
+print(K)
+print(F)
 
 plt.show()
