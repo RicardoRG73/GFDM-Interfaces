@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_nodes(p, b, labels=(), figsize=(7,7), size=30, nums=False, alpha=1):
+def plot_nodes(p, b, labels=(), figsize=(8,4), size=150, nums=False, alpha=0.75):
     """Scatter plot for different arrays of index nodes `b`
     
     Parameters
