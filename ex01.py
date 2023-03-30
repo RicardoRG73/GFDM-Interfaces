@@ -38,7 +38,7 @@ geometry.spline([7,0], marker=left)         # 3
 geometry.spline([2,3], marker=neumann2)      # 4
 geometry.spline([3,4], marker=right)        # 5
 geometry.spline([4,5], marker=neumann3)      # 6
-geometry.spline([5,2], marker=interface1)   # 7
+geometry.spline([2,5], marker=interface1)   # 7
 
 # surfaces
 mat0 = 100                                  # marker for nodes on material 1
@@ -56,7 +56,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.1
+mesh.el_size_factor = 0.2
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -89,18 +89,18 @@ B = np.hstack((bl,br,bn0,bn1,bn2,bn3,bi0,bi1))                    # all boundari
 
 elementmarkers = np.asarray(elementmarkers)
 
-bm0 = faces[elementmarkers == mat0]
-bm0 = bm0.flatten()
-bm0 = np.setdiff1d(bm0,B)
+m0 = faces[elementmarkers == mat0]
+m0 = m0.flatten()
+m0 = np.setdiff1d(m0,B)
 
-bm1 = faces[elementmarkers == mat1]
-bm1 = bm1.flatten()
-bm1 = np.setdiff1d(bm1,B)
+m1 = faces[elementmarkers == mat1]
+m1 = m1.flatten()
+m1 = np.setdiff1d(m1,B)
 
 from plots import plot_nodes
 plot_nodes(
     coords,
-    b=(bl,br,bn0,bn1,bn2,bn3,bi0,bi1,bm0,bm1),
+    b=(bl,br,bn0,bn1,bn2,bn3,bi0,bi1,m0,m1),
     labels=(
         "Left",
         "Right",
@@ -115,8 +115,8 @@ plot_nodes(
     ),
     figsize=(8,4),
     size=150,
-    nums=False,
-    alpha=0.75
+    nums=True,
+    alpha=0.75,
 )
 
 """ Problem parameters """
@@ -130,10 +130,13 @@ source = lambda p: 1
 fl = lambda p: 1
 fr = lambda p: 0
 fn = lambda p: 0
+beta = 0
+fi0 = lambda p: beta
+fi1 = lambda p: -beta
 
 materials = {}
-materials["0"] = [k0, bm0]
-materials["1"] = [k1, bm1]
+materials["0"] = [k0, m0]
+materials["1"] = [k1, m1]
 
 neumann_boundaries = {}
 neumann_boundaries["0"] = [k0, bn0, fn]
@@ -145,6 +148,9 @@ dirichlet_boundaries = {}
 dirichlet_boundaries["0"] = [bl, fl]
 dirichlet_boundaries["1"] = [br, fr]
 
+interfaces = {}
+interfaces["0"] = [k0, bi0, fi0, k1, bi1, fi1]
+
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
@@ -155,12 +161,26 @@ K,F = create_system_K_F(
     source=source,
     materials=materials,
     neumann_boundaries=neumann_boundaries,
-    dirichlet_boundaries=dirichlet_boundaries
+    dirichlet_boundaries=dirichlet_boundaries,
+    interfaces=interfaces
 )
-plt.show()
+
 U = np.linalg.solve(K,F)
 
 from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
+
+import plotly.graph_objects as go
+fig = go.Figure(
+    data=[
+    go.Mesh3d(
+    x=coords[:,0],
+    y=coords[:,1],
+    z=U,
+    i=faces[:,0],
+    j=faces[:,1],
+    k=faces[:,2],
+)])
+fig.show()
 
 plt.show()

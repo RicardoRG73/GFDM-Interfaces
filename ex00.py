@@ -71,14 +71,14 @@ B = np.hstack((bl,br,bb,bt))                    # all boundaries
 
 elementmarkers = np.asarray(elementmarkers)
 
-bm0 = faces[elementmarkers == mat0]
-bm0 = bm0.flatten()
-bm0 = np.setdiff1d(bm0,B)
+m0 = faces[elementmarkers == mat0]
+m0 = m0.flatten()
+m0 = np.setdiff1d(m0,B)
 
 from plots import plot_nodes
 plot_nodes(
     coords,
-    b=(bl,br,bb,bt,bm0),
+    b=(bl,br,bb,bt,m0),
     labels=(
         "Left",
         "Right",
@@ -109,7 +109,7 @@ fb = lambda p: p[0]
 ft = lambda p: p[0]
 
 materials = {}
-materials["0"] = [k0, bm0]
+materials["0"] = [k0, m0]
 
 neumann_boundaries = {}
 neumann_boundaries["right"] = [k0, br, fr]
@@ -143,7 +143,10 @@ fig = go.Figure(
     go.Mesh3d(
     x=coords[:,0],
     y=coords[:,1],
-    z=U
+    z=U,
+    i=faces[:,0],
+    j=faces[:,1],
+    k=faces[:,2]
 )])
 fig.show()
 
