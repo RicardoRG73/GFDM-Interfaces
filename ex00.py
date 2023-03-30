@@ -12,24 +12,26 @@ geometry = cfg.Geometry()                   # geometry object
 
 # points
 geometry.point([-1,0])                      # 0
-geometry.point([1,0])                       # 3
-geometry.point([1,1])                       # 4
-geometry.point([-1,1])                      # 7
+geometry.point([0,0])                       # 1
+geometry.point([1,0])                       # 2
+geometry.point([0,1])                       # 3
+geometry.point([-1,1])                      # 4
 
 # lines
 left = 11                                   # marker for nodes on left boundary
 right = 12                                  # marker for nodes on right boundary
 bottom = 13
 top = 14
-geometry.spline([0,1], marker=bottom)      # 0
-geometry.spline([1,2], marker=right)        # 1
-geometry.spline([2,3], marker=top)      # 2
-geometry.spline([3,0], marker=left)         # 3
+geometry.spline([0,1], marker=bottom)       # 0
+geometry.spline([1,2], marker=bottom)       # 1
+geometry.circle([2,1,3], marker=right)      # 2
+geometry.spline([3,4], marker=top)          # 3
+geometry.spline([4,0], marker=left)         # 4
 
 
 # surfaces
 mat0 = 100                                  # marker for nodes on material 1
-geometry.surface([0,1,2,3], marker=mat0)    # 0
+geometry.surface([0,1,2,3,4], marker=mat0)  # 0
 
 # geometry plot
 cfv.figure(fig_size=(8,4))
@@ -60,9 +62,9 @@ cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_typ
 bl = np.asarray(bdofs[left]) - 1                # index of nodes on left boundary
 br = np.asarray(bdofs[right]) - 1               # index of nodes on right boundary
 bb = np.asarray(bdofs[bottom]) - 1
-bb = np.setdiff1d(bb, [0,1])
+bb = np.setdiff1d(bb, [0,2])
 bt = np.asarray(bdofs[top]) - 1
-bt = np.setdiff1d(bt, [2,3])
+bt = np.setdiff1d(bt, [3,4])
 
 B = np.hstack((bl,br,bb,bt))                    # all boundaries
 
@@ -92,25 +94,28 @@ plot_nodes(
 """ Problem parameters """
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
 # a differential lineal operator as:
-# Au + Bu_x + Cu_y + Du_xx + Eu_xy + Fu_yy
+# \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,2,0,2])
 k0 = 1
 k1 = 1
-source = lambda p: -1
-fl = lambda p: 1
-fr = lambda p: 0
-fn = lambda p: 0
+source = lambda p: -5
+fl = lambda p: p[0]
+fr = lambda p: p[0]
+fb = lambda p: p[0]
+ft = lambda p: p[0]
 
 materials = {}
 materials["0"] = [k0, bm0]
 
 neumann_boundaries = {}
-neumann_boundaries["0"] = [k0, bt, fn]
-neumann_boundaries["1"] = [k0, bb, fn]
+#neumann_boundaries["0"] = [k0, bt, fn]
+#neumann_boundaries["1"] = [k0, bb, fn]
 
 dirichlet_boundaries = {}
 dirichlet_boundaries["0"] = [bl, fl]
 dirichlet_boundaries["1"] = [br, fr]
+dirichlet_boundaries["top"] = [bt, ft]
+dirichlet_boundaries["bottom"] = [bb, fb]
 
 
 """ System `KU=F` assembling """
@@ -129,5 +134,15 @@ U = np.linalg.solve(K,F)
 
 from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
+
+import plotly.graph_objects as go
+fig = go.Figure(
+    data=[
+    go.Mesh3d(
+    x=coords[:,0],
+    y=coords[:,1],
+    z=U
+)])
+fig.show()
 
 plt.show()

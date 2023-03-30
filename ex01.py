@@ -157,8 +157,10 @@ K,F = create_system_K_F(
     neumann_boundaries=neumann_boundaries,
     dirichlet_boundaries=dirichlet_boundaries
 )
+plt.show()
+U = np.linalg.solve(K,F)
 
-print(K)
-print(F)
+from plots import tri_surface
+tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
 
 plt.show()
