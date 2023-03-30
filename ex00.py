@@ -61,10 +61,11 @@ cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_typ
 """ Nodes indexing separated by boundary conditions """
 bl = np.asarray(bdofs[left]) - 1                # index of nodes on left boundary
 br = np.asarray(bdofs[right]) - 1               # index of nodes on right boundary
+br = np.setdiff1d(br, [2,3])
 bb = np.asarray(bdofs[bottom]) - 1
-bb = np.setdiff1d(bb, [0,2])
+bb = np.setdiff1d(bb, [0])
 bt = np.asarray(bdofs[top]) - 1
-bt = np.setdiff1d(bt, [3,4])
+bt = np.setdiff1d(bt, [4])
 
 B = np.hstack((bl,br,bb,bt))                    # all boundaries
 
@@ -79,10 +80,10 @@ plot_nodes(
     coords,
     b=(bl,br,bb,bt,bm0),
     labels=(
-        "Left Dirichlet",
-        "Right Dirichlet",
-        "Bottom Neumann",
-        "Top Neumann",
+        "Left",
+        "Right",
+        "Bottom",
+        "Top",
         "Material 0"
     ),
     figsize=(8,4),
@@ -90,6 +91,9 @@ plot_nodes(
     nums=True,
     alpha=0.75
 )
+
+from plots import plot_normal_vectors
+plot_normal_vectors(b=br, p=coords)
 
 """ Problem parameters """
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
@@ -100,7 +104,7 @@ k0 = 1
 k1 = 1
 source = lambda p: -5
 fl = lambda p: p[0]
-fr = lambda p: p[0]
+fr = lambda p: 0
 fb = lambda p: p[0]
 ft = lambda p: p[0]
 
@@ -108,12 +112,10 @@ materials = {}
 materials["0"] = [k0, bm0]
 
 neumann_boundaries = {}
-#neumann_boundaries["0"] = [k0, bt, fn]
-#neumann_boundaries["1"] = [k0, bb, fn]
+neumann_boundaries["right"] = [k0, br, fr]
 
 dirichlet_boundaries = {}
 dirichlet_boundaries["0"] = [bl, fl]
-dirichlet_boundaries["1"] = [br, fr]
 dirichlet_boundaries["top"] = [bt, ft]
 dirichlet_boundaries["bottom"] = [bb, fb]
 

@@ -8,17 +8,30 @@ def support_nodes(i,triangles):
     return I
 
 def normal_vectors(b,p):
+    percentage_line_tolerance = 0.99
     N = b.shape[0]
     l1 = p[b[1],:] - p[b[0],:]
     l1 = l1 / np.linalg.norm(l1)
     l2 = p[b[b.shape[0]//2],:] - p[b[0],:]
     l2 = l2 / np.linalg.norm(l2)
-    line = np.dot(l1,l2)>0.90
+    line = np.dot(l1,l2) > percentage_line_tolerance
+    rotation = np.array([[0,-1],[1,0]])
     if line:
-        l1 = np.array([[0,-1],[1,0]]) @ l1
-        n = np.kron(np.ones(N),l1.T).reshape((N,2))
-    else:
+        l1 = rotation @ l1
+        n = np.kron(np.ones(N),l1).reshape((N,2))
+    else: # curve
         n = np.zeros((N,2))
+        centroid = np.mean(p,axis=0)
+        for i in b:
+            d = np.sqrt((p[i,0]-p[b,0])**2 + (p[i,1]-p[b,1])**2)
+            imin = b[d.argsort()[:3]]
+            pm = np.mean(p[imin,:], axis=0)
+            v1 = p[imin[1]] - pm
+            v2 = p[imin[2]] - pm
+            ni = rotation @ (v2-v1) / np.linalg.norm(v2-v1)
+            ni = ni * np.dot(ni , p[i]-centroid)
+            ni = ni / np.linalg.norm(ni)
+            n[b==i] = ni
     
     return n
 

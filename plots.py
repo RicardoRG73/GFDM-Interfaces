@@ -36,17 +36,13 @@ def plot_nodes(p, b, labels=(), figsize=(8,4), size=150, nums=False, alpha=0.75)
     plt.title('Nodes')
     return fig
 
-def plot_normal_vectors(p, b, size=70):
-    from GFDMI import interface_normal_vec
+def plot_normal_vectors(b,p):
     fig = plt.figure()
-    for i in b:
-        plt.scatter(p[i,0], p[i,1], s=size)
-        nx, ny = interface_normal_vec(p, i, b)
-        plt.quiver(p[i,0], p[i,1], nx, ny, alpha=0.5)
-    
-    for i in b:
-        plt.text(p[i,0], p[i,1], str(i))
-    plt.axis('equal')
+    plt.scatter(p[b,0], p[b,1])
+    from GFDMI import normal_vectors
+    n = normal_vectors(b,p)
+    plt.quiver(p[b,0], p[b,1], n[:,0], n[:,1], alpha=0.5)
+    plt.axis("equal")
     return fig
 
 def tri_surface(p, t, U, azim=-60, elev=30):
