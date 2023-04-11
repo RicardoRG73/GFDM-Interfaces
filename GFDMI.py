@@ -116,83 +116,83 @@ def create_system_K_F(
     # Interfaces
     for interface in interfaces:
         k0 = interfaces[interface][0]
-        b0 = interfaces[interface][1]
-        f0 = interfaces[interface][2]
-        k1 = interfaces[interface][3]
-        b1 = interfaces[interface][4]
-        f1 = interfaces[interface][5] 
-        n = normal_vectors(b0,p)
-        if b0.shape[0] == b1.shape[0]:
-            for i in b0:
-                I = support_nodes(i,triangles)
-                ni = n[i==b0][0]
-                deltas_x = p[i,0] - p[I,0]
-                deltas_y = p[i,1] - p[I,1]
-                ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
-                dot_ghost_n = ghost @ ni
-                ghost_x, ghost_y = dot_ghost_n * ghost
+        k1 = interfaces[interface][1]
+        b = interfaces[interface][2]
+        beta = interfaces[interface][3]
+        alpha = interfaces[interface][4]
+        material0 = interfaces[interface][5]
+        material1 = interfaces[interface][6]
+        m0 = materials[material0][1]
+        m1 = materials[material1][1]
+        n = normal_vectors(b,p)
 
-                deltas_x = np.hstack((ghost_x, deltas_x))
-                deltas_y = np.hstack((ghost_y, deltas_y))
+        for i in b:
+            # Material M0
+            I_all = support_nodes(i,triangles)
+            I = np.setdiff1d(I_all, m1)
+            ni = n[b==i][0]
 
-                M = np.vstack((
-                    np.ones(deltas_x.shape),
-                    deltas_x,
-                    deltas_y,
-                    deltas_x**2,
-                    deltas_x*deltas_y,
-                    deltas_y**2
-                ))
-                Gamma = np.linalg.pinv(M) @ (k0*L)
-                Gamma_ghost = Gamma[0]
-                Gamma = Gamma[1:]
+            deltas_x = p[i,0] - p[I,0]
+            deltas_y = p[i,1] - p[I,1]
+            ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
+            dot_ghost_n = ghost @ ni
+            ghost_x, ghost_y = dot_ghost_n * ghost
 
-                nx, ny = ni
-                Gamma_n = np.linalg.pinv(M) @ (k0*[0,nx,ny,0,0,0])
-                Gamma_n_ghost = Gamma_n[0]
-                Gamma_n = Gamma_n[1:]
-                Gg = Gamma_ghost / Gamma_n_ghost
-                K[i,I] += Gamma - Gg * Gamma_n
-                F[i] += source(p[i]) - Gg * f0(p[i]) / 2
+            deltas_x = np.hstack((ghost_x, deltas_x))
+            deltas_y = np.hstack((ghost_y, deltas_y))
 
-            for i in b1:
-                I = support_nodes(i,triangles)
-                ni = n[i==b1][0]
-                deltas_x = p[i,0] - p[I,0]
-                deltas_y = p[i,1] - p[I,1]
-                ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
-                dot_ghost_n = ghost @ ni
-                ghost_x, ghost_y = dot_ghost_n * ghost
+            M = np.vstack((
+                np.ones(deltas_x.shape),
+                deltas_x,
+                deltas_y,
+                deltas_x**2,
+                deltas_x*deltas_y,
+                deltas_y**2
+            ))
+            Gamma = np.linalg.pinv(M) @ (k0*L)
+            Gamma_ghost = Gamma[0]
+            Gamma = Gamma[1:]
 
-                deltas_x = np.hstack((ghost_x, deltas_x))
-                deltas_y = np.hstack((ghost_y, deltas_y))
+            nx, ny = ni
+            Gamma_n = np.linalg.pinv(M) @ (k0*[0,nx,ny,0,0,0])
+            Gamma_n_ghost = Gamma_n[0]
+            Gamma_n = Gamma_n[1:]
+            Gg = Gamma_ghost / Gamma_n_ghost
+            K[i,I] += Gamma - Gg * Gamma_n
+            F[i] += source(p[i]) - Gg * beta(p[i])
 
-                M = np.vstack((
-                    np.ones(deltas_x.shape),
-                    deltas_x,
-                    deltas_y,
-                    deltas_x**2,
-                    deltas_x*deltas_y,
-                    deltas_y**2
-                ))
-                Gamma = np.linalg.pinv(M) @ (k1*L)
-                Gamma_ghost = Gamma[0]
-                Gamma = Gamma[1:]
+            # Material M1
+            I = np.setdiff1d(I_all, m0)
 
-                nx, ny = ni
-                Gamma_n = np.linalg.pinv(M) @ (k1*[0,nx,ny,0,0,0])
-                Gamma_n_ghost = Gamma_n[0]
-                Gamma_n = Gamma_n[1:]
-                Gg = Gamma_ghost / Gamma_n_ghost
-                K[i,I] += Gamma - Gg * Gamma_n
-                F[i] += source(p[i]) - Gg * f1(p[i]) / 2
+            deltas_x = p[i,0] - p[I,0]
+            deltas_y = p[i,1] - p[I,1]
+            ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
+            dot_ghost_n = ghost @ ni
+            ghost_x, ghost_y = dot_ghost_n * ghost
 
-        # solution discontinuity implementation
-        # N_interface = b0.shape[0]
-        # K = np.vstack((K,np.zeros((N_interface,N))))
-        # F = np.hstack((F,np.zeros(N_interface)))
-        # K[N:,b0] = np.eye(N_interface)
-        # K[N:,b1] = -np.eye(N_interface)
+            deltas_x = np.hstack((ghost_x, deltas_x))
+            deltas_y = np.hstack((ghost_y, deltas_y))
+
+            M = np.vstack((
+                np.ones(deltas_x.shape),
+                deltas_x,
+                deltas_y,
+                deltas_x**2,
+                deltas_x*deltas_y,
+                deltas_y**2
+            ))
+            Gamma = np.linalg.pinv(M) @ (k1*L)
+            Gamma_ghost = Gamma[0]
+            Gamma = Gamma[1:]
+
+            nx, ny = ni
+            Gamma_n = np.linalg.pinv(M) @ (k1*[0,nx,ny,0,0,0])
+            Gamma_n_ghost = Gamma_n[0]
+            Gamma_n = Gamma_n[1:]
+            Gg = Gamma_ghost / Gamma_n_ghost
+            K[i,I] += Gamma - Gg * Gamma_n
+            F[i] += source(p[i]) - Gg * beta(p[i])
+
                 
                 
 
