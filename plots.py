@@ -60,7 +60,6 @@ def tri_surface(p, t, U, azim=-60, elev=30):
     fig = plt.figure(figsize=(7,7))
     ax = plt.axes(projection='3d')
     ax.plot_trisurf(p[:,0], p[:,1], U,
-                triangles=t,
                 cmap=plt.get_cmap('cool'),
                 edgecolor=(0,0,0,0.2),
                 alpha=0.75)

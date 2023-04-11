@@ -120,10 +120,9 @@ def create_system_K_F(
         f0 = interfaces[interface][2]
         k1 = interfaces[interface][3]
         b1 = interfaces[interface][4]
-        f1 = interfaces[interface][5]
-        N = b0.shape[0]
+        f1 = interfaces[interface][5] 
         n = normal_vectors(b0,p)
-        if N == b1.shape[0]:
+        if b0.shape[0] == b1.shape[0]:
             for i in b0:
                 I = support_nodes(i,triangles)
                 ni = n[i==b0][0]
@@ -187,6 +186,13 @@ def create_system_K_F(
                 Gg = Gamma_ghost / Gamma_n_ghost
                 K[i,I] += Gamma - Gg * Gamma_n
                 F[i] += source(p[i]) - Gg * f1(p[i]) / 2
+
+        # solution discontinuity implementation
+        # N_interface = b0.shape[0]
+        # K = np.vstack((K,np.zeros((N_interface,N))))
+        # F = np.hstack((F,np.zeros(N_interface)))
+        # K[N:,b0] = np.eye(N_interface)
+        # K[N:,b1] = -np.eye(N_interface)
                 
                 
 

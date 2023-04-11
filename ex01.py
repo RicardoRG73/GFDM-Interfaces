@@ -132,7 +132,7 @@ fr = lambda p: 0
 fn = lambda p: 0
 beta = 0
 fi0 = lambda p: beta
-fi1 = lambda p: -beta
+fi1 = lambda p: -1
 
 materials = {}
 materials["0"] = [k0, m0]
@@ -165,7 +165,7 @@ K,F = create_system_K_F(
     interfaces=interfaces
 )
 
-U = np.linalg.solve(K,F)
+U = np.linalg.lstsq(K,F)[0]
 
 from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
