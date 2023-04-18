@@ -38,7 +38,7 @@ def plot_nodes(p, b, labels=(), figsize=(8,4), size=150, nums=False, alpha=0.75)
 
 def plot_normal_vectors(b,p):
     fig = plt.figure()
-    plt.scatter(p[b,0], p[b,1])
+    plt.scatter(p[b,0], p[b,1], s=70)
     from GFDMI import normal_vectors
     n = normal_vectors(b,p)
     plt.quiver(p[b,0], p[b,1], n[:,0], n[:,1], alpha=0.5)

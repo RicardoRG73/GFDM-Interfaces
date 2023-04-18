@@ -100,8 +100,8 @@ plot_normal_vectors(b=br, p=coords)
 # a differential lineal operator as:
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,2,0,2])
-k0 = 1
-k1 = 1
+k0 = lambda p: 1
+k1 = lambda p: 1
 source = lambda p: -5
 fl = lambda p: p[0]
 fr = lambda p: 0

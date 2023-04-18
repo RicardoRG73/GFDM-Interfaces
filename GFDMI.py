@@ -12,10 +12,10 @@ def normal_vectors(b,p):
     N = b.shape[0]
     l1 = p[b[1],:] - p[b[0],:]
     l1 = l1 / np.linalg.norm(l1)
-    l2 = p[b[b.shape[0]//2],:] - p[b[0],:]
+    l2 = p[b[N//2],:] - p[b[0],:]
     l2 = l2 / np.linalg.norm(l2)
     line = np.dot(l1,l2) > percentage_line_tolerance
-    rotation = np.array([[0,-1],[1,0]])
+    rotation = np.array([[0,1],[-1,0]])
     if line:
         l1 = rotation @ l1
         n = np.kron(np.ones(N),l1).reshape((N,2))
@@ -60,8 +60,8 @@ def create_system_K_F(
         b = materials[material][1]
         for i in b:
             I = support_nodes(i,triangles)
-            deltas_x = p[i,0] - p[I,0]
-            deltas_y = p[i,1] - p[I,1]
+            deltas_x = p[I,0] - p[i,0]
+            deltas_y = p[I,1] - p[i,1]
             M = np.vstack((
                 np.ones(deltas_x.shape),
                 deltas_x,
@@ -70,7 +70,7 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k*L)
+            Gamma = np.linalg.pinv(M) @ (k(p[i])*L)
             K[i,I] += Gamma
             F[i] += source(p[i])
 
@@ -84,8 +84,8 @@ def create_system_K_F(
             I = support_nodes(i,triangles)
             ni = n[b==i][0]
 
-            deltas_x = p[i,0] - p[I,0]
-            deltas_y = p[i,1] - p[I,1]
+            deltas_x = p[I,0] - p[i,0]
+            deltas_y = p[I,1] - p[i,1]
             ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
             dot_ghost_n = ghost @ ni
             ghost_x, ghost_y = dot_ghost_n * ghost
@@ -101,12 +101,12 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k*L)
+            Gamma = np.linalg.pinv(M) @ (k(p[i])*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k*[0,nx,ny,0,0,0])
+            Gamma_n = np.linalg.pinv(M) @ (k(p[i])*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
@@ -132,8 +132,8 @@ def create_system_K_F(
             I = np.setdiff1d(I_all, m1)
             ni = n[b==i][0]
 
-            deltas_x = p[i,0] - p[I,0]
-            deltas_y = p[i,1] - p[I,1]
+            deltas_x = p[I,0] - p[i,0]
+            deltas_y = p[I,1] - p[i,1]
             ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
             dot_ghost_n = ghost @ ni
             ghost_x, ghost_y = dot_ghost_n * ghost
@@ -149,12 +149,12 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k0*L)
+            Gamma = np.linalg.pinv(M) @ (k0(p[i])*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k0*[0,nx,ny,0,0,0])
+            Gamma_n = np.linalg.pinv(M) @ (k0(p[i])*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
@@ -164,8 +164,8 @@ def create_system_K_F(
             # Material M1
             I = np.setdiff1d(I_all, m0)
 
-            deltas_x = p[i,0] - p[I,0]
-            deltas_y = p[i,1] - p[I,1]
+            deltas_x = p[I,0] - p[i,0]
+            deltas_y = p[I,1] - p[i,1]
             ghost = np.array([-np.mean(deltas_x), -np.mean(deltas_y)])
             dot_ghost_n = ghost @ ni
             ghost_x, ghost_y = dot_ghost_n * ghost
@@ -181,12 +181,12 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k1*L)
+            Gamma = np.linalg.pinv(M) @ (k1(p[i])*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k1*[0,nx,ny,0,0,0])
+            Gamma_n = np.linalg.pinv(M) @ (k1(p[i])*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
