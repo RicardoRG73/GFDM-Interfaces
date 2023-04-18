@@ -166,6 +166,9 @@ U = np.linalg.lstsq(K,F)[0]
 from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
 
+from plots import contourf_plot
+contourf_plot(p=coords, U=U, levels=20)
+
 # import plotly.graph_objects as go
 # fig = go.Figure(
 #     data=[

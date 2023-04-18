@@ -118,6 +118,7 @@ def create_system_K_F(
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
         b = interfaces[interface][2]
+        m = b.shape[0]
         beta = interfaces[interface][3]
         alpha = interfaces[interface][4]
         material0 = interfaces[interface][5]
@@ -125,6 +126,10 @@ def create_system_K_F(
         m0 = materials[material0][1]
         m1 = materials[material1][1]
         n = normal_vectors(b,p)
+        N = K.shape[0]
+        # K = np.hstack((K, np.zeros((N,m))))
+        # K = np.vstack((K ,np.zeros((m,N+m))))
+        i2 = N
 
         for i in b:
             # Material M0
@@ -159,7 +164,7 @@ def create_system_K_F(
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
             K[i,I] += Gamma - Gg * Gamma_n
-            F[i] += source(p[i]) - Gg * beta(p[i])
+            F[i] += source(p[i]) - k0(p[i]) * Gg * beta(p[i])
 
             # Material M1
             I = np.setdiff1d(I_all, m0)
@@ -183,15 +188,21 @@ def create_system_K_F(
             ))
             Gamma = np.linalg.pinv(M) @ (k1(p[i])*L)
             Gamma_ghost = Gamma[0]
-            Gamma = Gamma[1:]
+            Gamma_i = Gamma[1]
+            Gamma = Gamma[2:]
 
             nx, ny = ni
             Gamma_n = np.linalg.pinv(M) @ (k1(p[i])*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
-            Gamma_n = Gamma_n[1:]
+            Gamma_n_i = Gamma_n[1]
+            Gamma_n = Gamma_n[2:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            K[i,I] += Gamma - Gg * Gamma_n
-            F[i] += source(p[i]) - Gg * beta(p[i])
+            I = I[1:]
+            K[i,I] += Gamma - k1(p[i]) * Gg * Gamma_n
+            K[i,i] += Gamma_i - k1(p[i]) * Gg * Gamma_n_i
+            
+            # K[i2,i2] = Gamma_i - Gg * Gamma_n_i
+            # F[i] += source(p[i]) - Gg * beta(p[i])
 
                 
                 
