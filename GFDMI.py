@@ -163,8 +163,9 @@ def create_system_K_F(
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            K[i,I] += Gamma - Gg * Gamma_n
-            F[i] += source(p[i]) - k0(p[i]) * Gg * beta(p[i])
+            K[i,I] += k0(p[i]) * (Gamma - Gg * Gamma_n)
+            beta_i = beta(p[i])
+            F[i] += source(p[i]) - k0(p[i])**2 * Gg * beta_i
 
             # Material M1
             I = np.setdiff1d(I_all, m0)
@@ -198,11 +199,11 @@ def create_system_K_F(
             Gamma_n = Gamma_n[2:]
             Gg = Gamma_ghost / Gamma_n_ghost
             I = I[1:]
-            K[i,I] += Gamma - k1(p[i]) * Gg * Gamma_n
-            K[i,i] += Gamma_i - k1(p[i]) * Gg * Gamma_n_i
+            K[i,I] += k1(p[i]) * (Gamma - Gg * Gamma_n)
+            K[i,i] += k1(p[i]) * (Gamma_i - Gg * Gamma_n_i)
             
             # K[i2,i2] = Gamma_i - Gg * Gamma_n_i
-            # F[i] += source(p[i]) - Gg * beta(p[i])
+            F[i] += source(p[i]) - k1(p[i])**2 * Gg * beta(p[i])
 
                 
                 
