@@ -11,12 +11,12 @@ import calfem.vis_mpl as cfv
 geometry = cfg.Geometry()                   # geometry object
 
 # points
-ipf = 0.7                                   # interface point face
+ipf = 0.5                                   # interface point face
 geometry.point([-1,0])                      # 0
-geometry.point([-ipf,0], el_size=0.1)                    # 1
+geometry.point([-ipf,0], el_size=0.05)                    # 1
 geometry.point([1,0])                       # 2
 geometry.point([1,1])                       # 3
-geometry.point([ipf,1], el_size=0.1)                     # 4
+geometry.point([ipf,1], el_size=0.05)                     # 4
 geometry.point([-1,1])                      # 5
 
 # lines
@@ -108,7 +108,6 @@ plot_nodes(
         "Material 0",
         "Material 1"
     ),
-    figsize=(8,4),
     size=50,
     nums=False
 )
@@ -121,7 +120,7 @@ plot_normal_vectors(bi,coords)
 # a differential lineal operator as:
 # Au + Bu_x + Cu_y + Du_xx + Eu_xy + Fu_yy
 L = np.array([0,0,0,2,0,2])
-k0 = lambda p: 10
+k0 = lambda p: 2
 k1 = lambda p: 1
 source = lambda p: 0
 fl = lambda p: 1
@@ -165,7 +164,7 @@ from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
 
 from plots import contourf_plot
-contourf_plot(p=coords, U=U, levels=20)
+contourf_plot(p=coords, U=U, levels=30)
 
 # import plotly.graph_objects as go
 # fig = go.Figure(

@@ -2,8 +2,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use(["seaborn-v0_8", "paper.mplstyle"])
+cmap_color = "plasma"
 
-def plot_nodes(p, b, labels=(), figsize=(8,4), size=150, nums=False, alpha=1):
+def plot_nodes(p, b, labels=(), figsize=(16,8), size=150, nums=False, alpha=1):
     """Scatter plot for different arrays of index nodes `b`
     
     Parameters
@@ -34,10 +36,12 @@ def plot_nodes(p, b, labels=(), figsize=(8,4), size=150, nums=False, alpha=1):
     plt.axis('equal')
     plt.legend()
     plt.title('Nodes')
+    plt.xlabel("$x$")
+    plt.ylabel("$y$")
     return fig
 
 def plot_normal_vectors(b,p):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(14,7))
     plt.scatter(p[b,0], p[b,1], s=70)
     from GFDMI import normal_vectors
     n = normal_vectors(b,p)
@@ -57,16 +61,20 @@ def tri_surface(p, t, U, azim=-60, elev=30):
     U : ndarray
         Values in each node.
     """
-    fig = plt.figure(figsize=(7,7))
+    fig = plt.figure(figsize=(9,8))
     ax = plt.axes(projection='3d')
-    ax.plot_trisurf(p[:,0], p[:,1], U,
-                cmap=plt.get_cmap('cool'),
-                edgecolor=(0,0,0,0.2),
-                alpha=0.75)
+    ax.plot_trisurf(
+        p[:,0],
+        p[:,1],
+        U,
+        cmap=cmap_color,
+        edgecolor=None,
+        aa=False,
+    )
     ax.view_init(azim=azim, elev=elev)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('U')
+    ax.set_xlabel(r'{\tiny .}\\[3cm] $x$')
+    ax.set_ylabel(r'{\tiny .}\\[3cm] $y$')
+    ax.set_zlabel(r'{\tiny .}\\[3cm] $U$')
     return fig, ax
 
 def contourf_plot(p, U, levels=20):
@@ -79,11 +87,10 @@ def contourf_plot(p, U, levels=20):
     U : ndarray
         Values in each node.
     """
-    fig = plt.figure(figsize=(7,4))
-    plt.tricontour(p[:,0], p[:,1], U, levels, colors="k", linewidths=0.5)
-    plt.tricontourf(p[:,0], p[:,1], U, levels)
+    fig = plt.figure(figsize=(16,8))
+    plt.tricontourf(p[:,0], p[:,1], U, levels, cmap=cmap_color)
     plt.colorbar()
     plt.axis('equal')
-    plt.xlabel('x')
-    plt.ylabel('y')
+    plt.xlabel('$x$')
+    plt.ylabel('$y$')
     return fig

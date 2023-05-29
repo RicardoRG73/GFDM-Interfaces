@@ -118,7 +118,7 @@ def create_system_K_F(
             F[i] = source(p[i]) - k_i * Gg * u_n(p[i])
 
     # Interfaces
-    K = sp.csr_matrix(K)
+    # K = sp.csr_matrix(K)
     for interface in interfaces:
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
@@ -133,8 +133,7 @@ def create_system_K_F(
 
         m = b.shape[0]
         N = p.shape[0]
-        # K = np.hstack((K, np.zeros((N,m))))
-        # K = np.vstack((K ,np.zeros((m,N+m))))
+
         i2 = N
 
         for i in b:
@@ -171,7 +170,7 @@ def create_system_K_F(
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
             beta_i = beta(p[i])
-            K[i,I] += k0_i * (Gamma - Gg * Gamma_n)
+            K[i,I] = k0_i * (Gamma - Gg * Gamma_n)
             F[i] = source(p[i]) - k0_i * Gg * beta_i
 
             # Material M1
@@ -206,7 +205,7 @@ def create_system_K_F(
             Gg = Gamma_ghost / Gamma_n_ghost
             beta_i = beta(p[i])
             K[i,I] += k1_i * (Gamma - Gg * Gamma_n)
-            F[i] = source(p[i]) - k1_i * Gg * beta_i
+            F[i] += source(p[i]) - k1_i * Gg * beta_i
 
                 
                 
