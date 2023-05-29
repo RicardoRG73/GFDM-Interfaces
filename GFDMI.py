@@ -1,10 +1,13 @@
 import numpy as np
+import scipy.sparse as sp
 
 def support_nodes(i,triangles):
-    temp =  np.any( np.isin(triangles,i), axis=1)
-    temp = triangles[temp,:].flatten()
-    I = np.setdiff1d(temp,i)
-    I = np.hstack((i,I))
+    I = np.array([i])
+    while I.shape[0] < 5:
+        temp =  np.any( np.isin(triangles,I), axis=1)
+        temp = triangles[temp,:].flatten()
+        I = np.setdiff1d(temp,i)
+        I = np.hstack((i,I))
     return I
 
 def normal_vectors(b,p):
@@ -51,8 +54,8 @@ def create_system_K_F(
     """
 
     N = p.shape[0]
-    K = np.zeros((N,N))
-    F = np.zeros((N,))
+    K = sp.lil_matrix((N,N))
+    F = sp.lil_matrix((N,1))
 
     # Interior nodes
     for material in materials:
@@ -71,8 +74,8 @@ def create_system_K_F(
                 deltas_y**2
             ))
             Gamma = np.linalg.pinv(M) @ (k(p[i])*L)
-            K[i,I] += Gamma
-            F[i] += source(p[i])
+            K[i,I] = Gamma
+            F[i] = source(p[i])
 
     # Neumman boundaries
     for boundary in neumann_boundaries:
@@ -101,24 +104,25 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k(p[i])*L)
+            k_i = k(p[i])
+            Gamma = np.linalg.pinv(M) @ (L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k(p[i])*np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            K[i,I] += Gamma - Gg * Gamma_n
-            F[i] += source(p[i]) - Gg * u_n(p[i])
+            K[i,I] = k_i * (Gamma - Gg * Gamma_n)
+            F[i] = source(p[i]) - k_i * Gg * u_n(p[i])
 
     # Interfaces
+    K = sp.csr_matrix(K)
     for interface in interfaces:
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
         b = interfaces[interface][2]
-        m = b.shape[0]
         beta = interfaces[interface][3]
         alpha = interfaces[interface][4]
         material0 = interfaces[interface][5]
@@ -126,7 +130,9 @@ def create_system_K_F(
         m0 = materials[material0][1]
         m1 = materials[material1][1]
         n = normal_vectors(b,p)
-        N = K.shape[0]
+
+        m = b.shape[0]
+        N = p.shape[0]
         # K = np.hstack((K, np.zeros((N,m))))
         # K = np.vstack((K ,np.zeros((m,N+m))))
         i2 = N
@@ -154,18 +160,19 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k0(p[i])*L)
+            k0_i = k0(p[i])
+            Gamma = np.linalg.pinv(M) @ (L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k0(p[i])*np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            K[i,I] += k0(p[i]) * (Gamma - Gg * Gamma_n)
             beta_i = beta(p[i])
-            F[i] += source(p[i]) - k0(p[i])**2 * Gg * beta_i
+            K[i,I] += k0_i * (Gamma - Gg * Gamma_n)
+            F[i] = source(p[i]) - k0_i * Gg * beta_i
 
             # Material M1
             I = np.setdiff1d(I_all, m0)
@@ -187,28 +194,26 @@ def create_system_K_F(
                 deltas_x*deltas_y,
                 deltas_y**2
             ))
-            Gamma = np.linalg.pinv(M) @ (k1(p[i])*L)
+            k1_i = k1(p[i])
+            Gamma = np.linalg.pinv(M) @ (L)
             Gamma_ghost = Gamma[0]
-            Gamma_i = Gamma[1]
-            Gamma = Gamma[2:]
+            Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (k1(p[i])*np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
-            Gamma_n_i = Gamma_n[1]
-            Gamma_n = Gamma_n[2:]
+            Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            I = I[1:]
-            K[i,I] += k1(p[i]) * (Gamma - Gg * Gamma_n)
-            K[i,i] += k1(p[i]) * (Gamma_i - Gg * Gamma_n_i)
-            
-            # K[i2,i2] = Gamma_i - Gg * Gamma_n_i
-            F[i] += source(p[i]) - k1(p[i])**2 * Gg * beta(p[i])
+            beta_i = beta(p[i])
+            K[i,I] += k1_i * (Gamma - Gg * Gamma_n)
+            F[i] = source(p[i]) - k1_i * Gg * beta_i
 
                 
                 
 
     # Dirichlet boundaries
+    K = sp.lil_matrix(K)
+    F = sp.lil_matrix(F)
     for boundary in dirichlet_boundaries:
         b = dirichlet_boundaries[boundary][0]
         u = dirichlet_boundaries[boundary][1]
@@ -218,6 +223,9 @@ def create_system_K_F(
             K[:,i] = 0
             K[i,i] = 1
 
+    K = sp.csr_matrix(K)
+    F = sp.csr_matrix(F)
 
+    U = sp.linalg.spsolve(K,F)
 
-    return K,F
+    return K, F, U

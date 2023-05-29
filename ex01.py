@@ -11,11 +11,12 @@ import calfem.vis_mpl as cfv
 geometry = cfg.Geometry()                   # geometry object
 
 # points
+ipf = 0.7                                   # interface point face
 geometry.point([-1,0])                      # 0
-geometry.point([-0.5,0], el_size=0.2)                    # 1
+geometry.point([-ipf,0], el_size=0.1)                    # 1
 geometry.point([1,0])                       # 2
 geometry.point([1,1])                       # 3
-geometry.point([0.5,1], el_size=0.2)                     # 4
+geometry.point([ipf,1], el_size=0.1)                     # 4
 geometry.point([-1,1])                      # 5
 
 # lines
@@ -85,12 +86,12 @@ elementmarkers = np.asarray(elementmarkers)
 m0 = faces[elementmarkers == mat0]
 m0 = m0.flatten()
 m0 = np.setdiff1d(m0,B)
-m0 = np.hstack((m0,bn0,bn3))
+# m0 = np.hstack((m0,bn0,bn3))
 
 m1 = faces[elementmarkers == mat1]
 m1 = m1.flatten()
 m1 = np.setdiff1d(m1,B)
-m1 = np.hstack((m1,bn1,bn2))
+# m1 = np.hstack((m1,6bn1,bn2))
 
 from plots import plot_nodes
 plot_nodes(
@@ -108,9 +109,8 @@ plot_nodes(
         "Material 1"
     ),
     figsize=(8,4),
-    size=150,
-    nums=False,
-    alpha=0.5,
+    size=50,
+    nums=False
 )
 
 from plots import plot_normal_vectors
@@ -121,7 +121,7 @@ plot_normal_vectors(bi,coords)
 # a differential lineal operator as:
 # Au + Bu_x + Cu_y + Du_xx + Eu_xy + Fu_yy
 L = np.array([0,0,0,2,0,2])
-k0 = lambda p: 2
+k0 = lambda p: 10
 k1 = lambda p: 1
 source = lambda p: 0
 fl = lambda p: 1
@@ -150,7 +150,7 @@ interfaces["0"] = [k0, k1, bi, beta, alpha, "0", "1"]   # = [difusion coefficien
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
-K,F = create_system_K_F(
+K, F, U = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -160,8 +160,6 @@ K,F = create_system_K_F(
     dirichlet_boundaries=dirichlet_boundaries,
     interfaces=interfaces
 )
-
-U = np.linalg.lstsq(K,F)[0]
 
 from plots import tri_surface
 tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
