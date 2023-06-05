@@ -11,12 +11,12 @@ import calfem.vis_mpl as cfv
 geometry = cfg.Geometry()                   # geometry object
 
 # points
-ipf = 0.5                                   # interface point face
+ipf = 0.5                                   # interface point offset
 geometry.point([-1,0])                      # 0
-geometry.point([-ipf,0], el_size=0.05)                    # 1
+geometry.point([-ipf,0], el_size=0.2)                    # 1
 geometry.point([1,0])                       # 2
 geometry.point([1,1])                       # 3
-geometry.point([ipf,1], el_size=0.05)                     # 4
+geometry.point([ipf,1], el_size=0.2)                     # 4
 geometry.point([-1,1])                      # 5
 
 # lines
@@ -51,7 +51,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.2
+mesh.el_size_factor = 0.5
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -86,12 +86,12 @@ elementmarkers = np.asarray(elementmarkers)
 m0 = faces[elementmarkers == mat0]
 m0 = m0.flatten()
 m0 = np.setdiff1d(m0,B)
-# m0 = np.hstack((m0,bn0,bn3))
+m0 = np.hstack((m0,bn0,bn3))
 
 m1 = faces[elementmarkers == mat1]
 m1 = m1.flatten()
 m1 = np.setdiff1d(m1,B)
-# m1 = np.hstack((m1,6bn1,bn2))
+m1 = np.hstack((m1,bn1,bn2))
 
 from plots import plot_nodes
 plot_nodes(
@@ -119,7 +119,7 @@ plot_normal_vectors(bi,coords)
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
 # a differential lineal operator as:
 # Au + Bu_x + Cu_y + Du_xx + Eu_xy + Fu_yy
-L = np.array([0,0,0,2,0,2])
+L = np.array([0,0,0,1,0,1])
 k0 = lambda p: 2
 k1 = lambda p: 1
 source = lambda p: 0
@@ -149,7 +149,7 @@ interfaces["0"] = [k0, k1, bi, beta, alpha, "0", "1"]   # = [difusion coefficien
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
-K, F, U = create_system_K_F(
+K, F, U, p = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -161,22 +161,10 @@ K, F, U = create_system_K_F(
 )
 
 from plots import tri_surface
-tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
+tri_surface(p=p, t=faces, U=U, azim=-60, elev=30)
 
 from plots import contourf_plot
-contourf_plot(p=coords, U=U, levels=30)
+contourf_plot(p=p, U=U, levels=30)
 
-# import plotly.graph_objects as go
-# fig = go.Figure(
-#     data=[
-#     go.Mesh3d(
-#     x=coords[:,0],
-#     y=coords[:,1],
-#     z=U,
-#     i=faces[:,0],
-#     j=faces[:,1],
-#     k=faces[:,2],
-# )])
-# fig.show()
 
 plt.show()
