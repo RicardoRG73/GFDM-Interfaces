@@ -126,8 +126,8 @@ source = lambda p: 0
 fl = lambda p: 1
 fr = lambda p: 0
 fn = lambda p: 0
-beta = lambda p: 0
-alpha = lambda p: 0
+beta = lambda p: 1
+alpha = lambda p: 1
 
 materials = {}
 materials["0"] = [k0, m0]
