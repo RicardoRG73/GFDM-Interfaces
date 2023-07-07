@@ -236,14 +236,6 @@ def create_system_K_F(
             for j in Ib:
                 dist = np.sum((p[j] - p[bd])**2, axis=1)
                 I[I==Ib] = bd[dist==0]
-
-            # interior nodes with support in double nodes
-            interior_d = support_nodes(i, triangles=triangles)
-            interior_d = np.setdiff1d(interior_d, np.hstack((m0,b)))
-            for j in interior_d:
-                F[j] = F[j].toarray() - K[j,i]
-                K[j,i] = 0
-
                 
             I[0] = i2
 
