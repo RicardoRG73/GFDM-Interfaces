@@ -51,7 +51,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.5
+mesh.el_size_factor = 0.1
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -108,7 +108,7 @@ plot_nodes(
         "Material 0",
         "Material 1"
     ),
-    size=50,
+    size=(50,50,200,200,200,200),
     nums=False
 )
 
@@ -126,7 +126,7 @@ source = lambda p: 0
 fl = lambda p: 1
 fr = lambda p: 0
 fn = lambda p: 0
-beta = lambda p: 0
+beta = lambda p: 3
 alpha = lambda p: 0
 
 materials = {}

@@ -43,7 +43,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.2
+mesh.el_size_factor = 0.08
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -86,10 +86,11 @@ plot_nodes(
         "Top",
         "Material 0"
     ),
-    figsize=(8,4),
+    loc='center',
+    figsize=(15,7),
     size=150,
-    nums=True,
-    alpha=0.75
+    nums=False,
+    alpha=1
 )
 
 from plots import plot_normal_vectors
@@ -101,11 +102,10 @@ plot_normal_vectors(b=br, p=coords)
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,2,0,2])
 k0 = lambda p: 1
-k1 = lambda p: 1
 source = lambda p: -5
 fl = lambda p: p[0]
 fr = lambda p: 0
-fb = lambda p: p[0]
+fb = lambda p: p[0] * 0.5 - 0.5
 ft = lambda p: p[0]
 
 materials = {}
@@ -122,7 +122,7 @@ dirichlet_boundaries["bottom"] = [bb, fb]
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
-K,F = create_system_K_F(
+K,F,U,p = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -132,22 +132,10 @@ K,F = create_system_K_F(
     dirichlet_boundaries=dirichlet_boundaries
 )
 
-U = np.linalg.solve(K,F)
-
 from plots import tri_surface
-tri_surface(p=coords, t=faces, U=U, azim=-60, elev=30)
+tri_surface(p=p, t=faces, U=U, azim=-120, elev=30)
 
-import plotly.graph_objects as go
-fig = go.Figure(
-    data=[
-    go.Mesh3d(
-    x=coords[:,0],
-    y=coords[:,1],
-    z=U,
-    i=faces[:,0],
-    j=faces[:,1],
-    k=faces[:,2]
-)])
-fig.show()
+from plots import contourf_plot
+contourf_plot(p=p, U=U, levels=30)
 
 plt.show()

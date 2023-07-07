@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 plt.style.use(["seaborn-v0_8", "paper.mplstyle"])
 cmap_color = "plasma"
 
-def plot_nodes(p, b, labels=(), figsize=(16,8), size=150, nums=False, alpha=1):
+def plot_nodes(p, b, labels=(), loc='best', figsize=(16,8), size=150, nums=False, alpha=1):
     """Scatter plot for different arrays of index nodes `b`
     
     Parameters
@@ -28,13 +28,20 @@ def plot_nodes(p, b, labels=(), figsize=(16,8), size=150, nums=False, alpha=1):
             label = ''
         else:
             label = labels[i-1]
-        plt.scatter(p[bi,0], p[bi,1], label=label, s=size, alpha=alpha)
+        if len(np.asarray(size).shape) == 0:
+            s = size
+        else:
+            if i > len(size):
+                s = size[0]
+            else:
+                s = size[i-1]
+        plt.scatter(p[bi,0], p[bi,1], label=label, s=s, alpha=alpha)
         i += 1
     if nums:
         for i in np.hstack(b):
             plt.text(p[i,0], p[i,1], str(i))
     plt.axis('equal')
-    plt.legend()
+    plt.legend(loc=loc)
     plt.title('Nodes')
     plt.xlabel("$x$")
     plt.ylabel("$y$")
