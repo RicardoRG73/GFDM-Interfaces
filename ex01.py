@@ -165,6 +165,6 @@ tri_surface(p=p, t=faces, U=U, azim=-60, elev=30)
 
 from plots import contourf_plot
 contourf_plot(p=p, U=U, levels=30)
-
+plt.scatter(p[bi,0],p[bi,1], alpha=0.5, s=5)
 
 plt.show()

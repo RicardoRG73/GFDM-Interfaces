@@ -105,7 +105,7 @@ k0 = lambda p: 1
 source = lambda p: -5
 fl = lambda p: p[0]
 fr = lambda p: 0
-fb = lambda p: p[0] * 0.5 - 0.5
+fb = lambda p: (p[0] - 1) * 0.5
 ft = lambda p: p[0]
 
 materials = {}
