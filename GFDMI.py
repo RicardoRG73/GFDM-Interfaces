@@ -166,13 +166,13 @@ def create_system_K_F(
         for i in b:
             # Material M0, whit b interface-original-nodes
             I_all = support_nodes(i,triangles)
-            I = np.setdiff1d(I_all, m1)
+            I0 = np.setdiff1d(I_all, m1)
             ni = n[b==i][0]
 
-            deltasx = p[I,0] - p[i,0]
-            deltasy = p[I,1] - p[i,1]
+            deltasx = p[I0,0] - p[i,0]
+            deltasy = p[I0,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
-            norm_ghost = I.shape[0] * np.linalg.norm(ghost)
+            norm_ghost = I0.shape[0] * np.linalg.norm(ghost)              # ghost further to equilibrate I
             ghostx, ghosty = norm_ghost * ni
 
             deltasx = np.hstack((ghostx, deltasx))
@@ -197,15 +197,15 @@ def create_system_K_F(
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
             beta_i = beta(p[i])
-            K[i,I] = k0_i * (Gamma - Gg * Gamma_n)
-            F[i] = source(p[i]) - k0_i * Gg * beta_i
+            K[i,I0] = k0_i * (Gamma - Gg * Gamma_n)
+            F[i] = source(p[i]) - k0_i * Gg * beta_i/2
 
             # Material M1, with b_d interface-double-nodes
-            I = np.setdiff1d(I_all, m0)
-            deltasx = p[I,0] - p[i,0]
-            deltasy = p[I,1] - p[i,1]
+            I1 = np.setdiff1d(I_all, m0)
+            deltasx = p[I1,0] - p[i,0]
+            deltasy = p[I1,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
-            norm_ghost = I.shape[0] * np.linalg.norm(ghost)
+            norm_ghost = I1.shape[0] * np.linalg.norm(ghost)
             ghostx, ghosty = - norm_ghost * ni
 
             deltasx = np.hstack((ghostx, deltasx))
@@ -230,21 +230,18 @@ def create_system_K_F(
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
 
-            # double nodes modification
-            Ib = np.setdiff1d(I,m1)                         # index for nodes at interface
-            Ib = np.setdiff1d(Ib,I[0])                      # leaving out the central node
+            # center double node conected to double nodes, instead of original nodes
+            Ib = np.setdiff1d(I1,m1)                         # index for nodes at interface
+            Ib = np.setdiff1d(Ib,I1[0])                      # leaving out the central node
             for j in Ib:
-                dist = np.sum((p[j] - p[bd])**2, axis=1)
-                I[I==Ib] = bd[dist==0]
+                dist = np.sum((p[j] - p[bd])**2, axis=1)    # distances for interface node j to original interface
+                I1[I1==j] = bd[dist==0]                     # modified index for interface node j
                 
-            I[0] = i2
-
-            md = support_nodes(i, triangles)
-            
+            I1[0] = i2                                      # center node index modified to double node
             
             beta_i = beta(p[i])
-            K[i,I] += k1_i * (Gamma - Gg * Gamma_n)
-            F[i] = F[i].toarray() + source(p[i]) - k1_i * Gg * beta_i
+            K[i,I1] += k1_i * (Gamma - Gg * Gamma_n)
+            F[i] = F[i].toarray() - k1_i * Gg * beta_i/2
             i2 += 1
                 
 

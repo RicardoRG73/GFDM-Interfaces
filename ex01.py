@@ -94,6 +94,8 @@ m1 = np.setdiff1d(m1,B)
 m1 = np.hstack((m1,bn1,bn2))
 
 from plots import plot_nodes
+sizeA = 10
+sizeB = 50
 plot_nodes(
     coords,
     b=(bl,br,bn0,bn1,bn2,bn3,bi,m0,m1),
@@ -108,7 +110,7 @@ plot_nodes(
         "Material 0",
         "Material 1"
     ),
-    size=(50,50,200,200,200,200),
+    size=(sizeA,sizeA,sizeB,sizeB,sizeB,sizeB),
     nums=False
 )
 
@@ -122,10 +124,10 @@ plot_normal_vectors(bi,coords)
 L = np.array([0,0,0,1,0,1])
 k0 = lambda p: 2
 k1 = lambda p: 1
-source = lambda p: 0
-fl = lambda p: 1
-fr = lambda p: 0
-fn = lambda p: 0
+source = lambda p: 3
+ul = lambda p: 1
+ur = lambda p: 0
+un = lambda p: 0
 beta = lambda p: 3
 alpha = lambda p: 0
 
@@ -134,14 +136,14 @@ materials["0"] = [k0, m0]
 materials["1"] = [k1, m1]
 
 neumann_boundaries = {}
-neumann_boundaries["0"] = [k0, bn0, fn]
-neumann_boundaries["1"] = [k0, bn1, fn]
-neumann_boundaries["2"] = [k1, bn2, fn]
-neumann_boundaries["3"] = [k1, bn3, fn]
+neumann_boundaries["0"] = [k0, bn0, un]
+neumann_boundaries["1"] = [k0, bn1, un]
+neumann_boundaries["2"] = [k1, bn2, un]
+neumann_boundaries["3"] = [k1, bn3, un]
 
 dirichlet_boundaries = {}
-dirichlet_boundaries["0"] = [bl, fl]
-dirichlet_boundaries["1"] = [br, fr]
+dirichlet_boundaries["0"] = [bl, ul]
+dirichlet_boundaries["1"] = [br, ur]
 
 interfaces = {}
 interfaces["0"] = [k0, k1, bi, beta, alpha, "0", "1"]   # = [difusion coefficient mat0, difusion coefficient mat1, index interface nodes, flux u_n jump, function u jump, material key 0, material key 1]

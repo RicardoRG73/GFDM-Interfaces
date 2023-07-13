@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 plt.style.use(["seaborn-v0_8", "paper.mplstyle"])
 cmap_color = "plasma"
 
-def plot_nodes(p, b, labels=(), loc='best', figsize=(16,8), size=150, nums=False, alpha=1):
+def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), size=150, nums=False, alpha=1):
     """Scatter plot for different arrays of index nodes `b`
     
     Parameters
