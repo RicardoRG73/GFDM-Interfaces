@@ -124,11 +124,11 @@ plot_normal_vectors(bi,coords)
 L = np.array([0,0,0,1,0,1])
 k0 = lambda p: 2
 k1 = lambda p: 1
-source = lambda p: 3
+source = lambda p: 0
 ul = lambda p: 1
 ur = lambda p: 0
 un = lambda p: 0
-beta = lambda p: 3
+beta = lambda p: 0
 alpha = lambda p: 0
 
 materials = {}

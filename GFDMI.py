@@ -62,7 +62,7 @@ def create_system_K_F(
     F = sp.lil_matrix((N,1))
 
     # Interior nodes
-    bns = np.array([])
+    bns = np.array([])                      # all nodes in neumann boundaries
     for key in neumann_boundaries:
         b = neumann_boundaries[key][1]
         bns = np.hstack((bns, b))
@@ -70,7 +70,7 @@ def create_system_K_F(
     for material in materials:
         k = materials[material][0]
         b = materials[material][1]
-        b = np.setdiff1d(b,bns)
+        b = np.setdiff1d(b,bns)             # interior nodes
         for i in b:
             I = support_nodes(i,triangles)
             deltasx = p[I,0] - p[i,0]
@@ -100,8 +100,13 @@ def create_system_K_F(
             deltasx = p[I,0] - p[i,0]
             deltasy = p[I,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
-            norm_ghost = I.shape[0] * np.linalg.norm(ghost)
-            ghostx, ghosty = norm_ghost * ghost
+            norm_ghost = np.linalg.norm(ghost)
+            ghostx, ghosty = norm_ghost * ni
+            norm_ghost = np.linalg.norm(np.array([ghostx, ghosty]))
+            mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2))
+            scale_factor = mean_delta/norm_ghost
+            ghostx = scale_factor * ghostx
+            ghosty = scale_factor * ghosty
 
             deltasx = np.hstack((ghostx, deltasx))
             deltasy = np.hstack((ghosty, deltasy))

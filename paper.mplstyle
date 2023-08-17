@@ -7,7 +7,7 @@ lines.linewidth :   5
 lines.markersize :  16
 xtick.labelsize :   28
 ytick.labelsize :   28
-text.usetex :       True
+text.usetex :       False
 font.size :         32
 legend.fontsize :   26
 legend.frameon :    True
