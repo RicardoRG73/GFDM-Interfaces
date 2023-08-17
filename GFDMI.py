@@ -120,17 +120,17 @@ def create_system_K_F(
                 deltasy**2
             ))
             k_i = k(p[i])
-            Gamma = np.linalg.pinv(M) @ (L)
+            Gamma = np.linalg.pinv(M) @ (k_i*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (k_i*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-            K[i,I] = k_i * (Gamma - Gg * Gamma_n)
-            F[i] = F[i].toarray() + source(p[i]) - k_i * Gg * u_n(p[i])
+            K[i,I] = Gamma - Gg * Gamma_n
+            F[i] = F[i].toarray() + source(p[i]) - Gg * u_n(p[i])
 
     # Interfaces
     # K = sp.csr_matrix(K)
