@@ -102,8 +102,9 @@ def create_system_K_F(
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
             norm_ghost = np.linalg.norm(ghost)
             ghostx, ghosty = norm_ghost * ni
+
             norm_ghost = np.linalg.norm(np.array([ghostx, ghosty]))
-            mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2))
+            mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2)[1:])
             scale_factor = mean_delta/norm_ghost
             ghostx = scale_factor * ghostx
             ghosty = scale_factor * ghosty
@@ -146,12 +147,12 @@ def create_system_K_F(
         m1 = materials[material1][1]
         n = normal_vectors(b,p)
 
-        m = b.shape[0]                              # m nodes at interfaace
-        N = p.shape[0]                              # N total nodes in the domain
+        m = b.shape[0]                              # m: number of nodes at interfaace
+        N = p.shape[0]                              # N: number of total nodes in the domain
 
         # Double nodes
-        p = np.vstack((p, p[b,:]))
-        #   K modification
+        p = np.vstack((p, p[b,:]))                  # double nodes coordinated added to original coordinates
+        #   K extension
         K = sp.hstack((K, sp.lil_matrix((N,m))))
         K = sp.vstack((K, sp.lil_matrix((m,N+m))))
         K = sp.lil_matrix(K)
@@ -161,7 +162,7 @@ def create_system_K_F(
         K[bd,bd] = 1
         K[bd,b] = -1
 
-        #   F modification
+        #   F extension
         F = sp.vstack((F, sp.lil_matrix((m,1))))
         F = sp.lil_matrix(F)
         for i in bd:
@@ -177,8 +178,14 @@ def create_system_K_F(
             deltasx = p[I0,0] - p[i,0]
             deltasy = p[I0,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
-            norm_ghost = I0.shape[0] * np.linalg.norm(ghost)              # ghost further to equilibrate I
+            norm_ghost = np.linalg.norm(ghost)
             ghostx, ghosty = norm_ghost * ni
+
+            norm_ghost = np.linalg.norm(np.array([ghostx, ghosty]))
+            mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2)[1:])
+            scale_factor = mean_delta/norm_ghost
+            ghostx = scale_factor * ghostx
+            ghosty = scale_factor * ghosty
 
             deltasx = np.hstack((ghostx, deltasx))
             deltasy = np.hstack((ghosty, deltasy))
@@ -192,26 +199,32 @@ def create_system_K_F(
                 deltasy**2
             ))
             k0_i = k0(p[i])
-            Gamma = np.linalg.pinv(M) @ (L)
+            Gamma = np.linalg.pinv(M) @ (k0_i*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (k0_i*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
             beta_i = beta(p[i])
-            K[i,I0] = k0_i * (Gamma - Gg * Gamma_n)
-            F[i] = source(p[i]) - k0_i * Gg * beta_i/2
+            K[i,I0] = Gamma - Gg * Gamma_n
+            F[i] = source(p[i]) - Gg * beta_i/2
 
             # Material M1, with b_d interface-double-nodes
             I1 = np.setdiff1d(I_all, m0)
             deltasx = p[I1,0] - p[i,0]
             deltasy = p[I1,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
-            norm_ghost = I1.shape[0] * np.linalg.norm(ghost)
+            norm_ghost = np.linalg.norm(ghost)
             ghostx, ghosty = - norm_ghost * ni
+
+            norm_ghost = np.linalg.norm(np.array([ghostx, ghosty]))
+            mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2)[1:])
+            scale_factor = mean_delta/norm_ghost
+            ghostx = scale_factor * ghostx
+            ghosty = scale_factor * ghosty
 
             deltasx = np.hstack((ghostx, deltasx))
             deltasy = np.hstack((ghosty, deltasy))
@@ -225,12 +238,12 @@ def create_system_K_F(
                 deltasy**2
             ))
             k1_i = k1(p[i])
-            Gamma = np.linalg.pinv(M) @ (L)
+            Gamma = np.linalg.pinv(M) @ (k1_i*L)
             Gamma_ghost = Gamma[0]
             Gamma = Gamma[1:]
 
             nx, ny = ni
-            Gamma_n = np.linalg.pinv(M) @ (np.array([0,nx,ny,0,0,0]))
+            Gamma_n = np.linalg.pinv(M) @ (k1_i*np.array([0,nx,ny,0,0,0]))
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
@@ -245,8 +258,8 @@ def create_system_K_F(
             I1[0] = i2                                      # center node index modified to double node
             
             beta_i = beta(p[i])
-            K[i,I1] += k1_i * (Gamma - Gg * Gamma_n)
-            F[i] = F[i].toarray() - k1_i * Gg * beta_i/2
+            K[i,I1] += Gamma - Gg * Gamma_n
+            F[i] = F[i].toarray() - Gg * beta_i/2
             i2 += 1
                 
 
