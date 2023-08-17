@@ -79,9 +79,9 @@ def tri_surface(p, t, U, azim=-60, elev=30):
         aa=False,
     )
     ax.view_init(azim=azim, elev=elev)
-    ax.set_xlabel(r'{\tiny .}\\[3cm] $x$')
-    ax.set_ylabel(r'{\tiny .}\\[3cm] $y$')
-    ax.set_zlabel(r'{\tiny .}\\[3cm] $U$')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$U$')
     return fig, ax
 
 def contourf_plot(p, U, levels=20):

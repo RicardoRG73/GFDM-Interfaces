@@ -122,7 +122,7 @@ plot_normal_vectors(bi,coords)
 # a differential lineal operator as:
 # Au + Bu_x + Cu_y + Du_xx + Eu_xy + Fu_yy
 L = np.array([0,0,0,1,0,1])
-k0 = lambda p: 10
+k0 = lambda p: 1
 k1 = lambda p: 1
 source = lambda p: 0
 ul = lambda p: 1

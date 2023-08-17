@@ -134,42 +134,19 @@ def create_system_K_F(
             F[i] = F[i].toarray() + source(p[i]) - Gg * u_n(p[i])
 
     # Interfaces
-    # K = sp.csr_matrix(K)
     for interface in interfaces:
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
         b = interfaces[interface][2]
         beta = interfaces[interface][3]
-        alpha = interfaces[interface][4]
         material0 = interfaces[interface][5]
         material1 = interfaces[interface][6]
         m0 = materials[material0][1]
         m1 = materials[material1][1]
         n = normal_vectors(b,p)
 
-        m = b.shape[0]                              # m: number of nodes at interfaace
-        N = p.shape[0]                              # N: number of total nodes in the domain
-
-        # # Double nodes
-        # p = np.vstack((p, p[b,:]))                  # double nodes coordinated added to original coordinates
-        # #   K extension
-        # K = sp.hstack((K, sp.lil_matrix((N,m))))
-        # K = sp.vstack((K, sp.lil_matrix((m,N+m))))
-        # K = sp.lil_matrix(K)
-
-        # bd = np.arange(N,N+m)                       # index for double nodes
-
-        # K[bd,bd] = 1
-        # K[bd,b] = -1
-
-        # #   F extension
-        # F = sp.vstack((F, sp.lil_matrix((m,1))))
-        # F = sp.lil_matrix(F)
-        # for i in bd:
-        #     F[i] = alpha(p[i])
-
-        # i2 = N
-        
+        K = sp.lil_matrix(K)
+        F = sp.lil_matrix(F)
         for i in b:
             # Material M0, whit b interface-original-nodes
             I_all = support_nodes(i,triangles)
@@ -211,7 +188,7 @@ def create_system_K_F(
             Gg = Gamma_ghost / Gamma_n_ghost
             beta_i = beta(p[i])
             K[i,I0] = Gamma - Gg * Gamma_n
-            F[i] = source(p[i]) - Gg * beta_i/2
+            F[i] = source(p[i]) - Gg * beta_i
 
             # Material M1, with b_d interface-double-nodes
             I1 = np.setdiff1d(I_all, m0)
@@ -249,21 +226,10 @@ def create_system_K_F(
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
 
-            # # center double node conected to double nodes, instead of original nodes
-            # Ib = np.setdiff1d(I1,m1)                         # index for nodes at interface
-            # Ib = np.setdiff1d(Ib,I1[0])                      # leaving out the central node
-            # for j in Ib:
-            #     dist = np.sum((p[j] - p[bd])**2, axis=1)    # distances for interface node j to original interface
-            #     I1[I1==j] = bd[dist==0]                     # modified index for interface node j
-                
-            # I1[0] = i2                                      # center node index modified to double node
-            
             beta_i = beta(p[i])
             K[i,I1] += Gamma - Gg * Gamma_n
-            F[i] = F[i].toarray() - Gg * beta_i/2
-            # i2 += 1
+            F[i] = F[i].toarray() - Gg * beta_i
                 
-
     # Dirichlet boundaries
     K = sp.lil_matrix(K)
     F = sp.lil_matrix(F)
