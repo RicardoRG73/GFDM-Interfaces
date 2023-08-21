@@ -137,21 +137,23 @@ def create_system_K_F(
     for interface in interfaces:
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
-        b = interfaces[interface][2]
-        beta = interfaces[interface][3]
-        material0 = interfaces[interface][5]
-        material1 = interfaces[interface][6]
-        m0 = materials[material0][1]
-        m1 = materials[material1][1]
-        n = normal_vectors(b,p)
+        biA = interfaces[interface][2]
+        biB = interfaces[interface][3]
+        beta = interfaces[interface][4]
+        alpha = interfaces[interface][5]
+        m0 = interfaces[interface][6]
+        m1 = interfaces[interface][7]
 
         K = sp.lil_matrix(K)
         F = sp.lil_matrix(F)
-        for i in b:
-            # Material M0, whit b interface-original-nodes
-            I_all = support_nodes(i,triangles)
-            I0 = np.setdiff1d(I_all, m1)
-            ni = n[b==i][0]
+        
+        # interface in material 0
+        n = normal_vectors(biA,p)
+        for i in biA:
+            I0 = support_nodes(i,triangles)
+            I0 = np.setdiff1d(I0,m1)
+
+            ni = n[biA==i][0]
 
             deltasx = p[I0,0] - p[i,0]
             deltasy = p[I0,1] - p[i,1]
@@ -189,14 +191,20 @@ def create_system_K_F(
             beta_i = beta(p[i])
             K[i,I0] = Gamma - Gg * Gamma_n
             F[i] = source(p[i]) - Gg * beta_i
+        
+        # interface in material 1
+        n = normal_vectors(biB,p)
+        for i in biB:
+            I0 = support_nodes(i,triangles)
+            I0 = np.setdiff1d(I0,m0)
 
-            # Material M1, with b_d interface-double-nodes
-            I1 = np.setdiff1d(I_all, m0)
-            deltasx = p[I1,0] - p[i,0]
-            deltasy = p[I1,1] - p[i,1]
+            ni = -n[biB==i][0]
+
+            deltasx = p[I0,0] - p[i,0]
+            deltasy = p[I0,1] - p[i,1]
             ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
             norm_ghost = np.linalg.norm(ghost)
-            ghostx, ghosty = - norm_ghost * ni
+            ghostx, ghosty = norm_ghost * ni
 
             norm_ghost = np.linalg.norm(np.array([ghostx, ghosty]))
             mean_delta = np.mean(np.sqrt(deltasx**2 + deltasy**2)[1:])
@@ -225,11 +233,19 @@ def create_system_K_F(
             Gamma_n_ghost = Gamma_n[0]
             Gamma_n = Gamma_n[1:]
             Gg = Gamma_ghost / Gamma_n_ghost
-
             beta_i = beta(p[i])
-            K[i,I1] += Gamma - Gg * Gamma_n
-            F[i] = F[i].toarray() - Gg * beta_i
-                
+            
+            biA_i = biA[np.argmin(
+                np.sqrt(
+                    (p[biA,0]-p[i,0])**2 + (p[biA,1]-p[i,1])**2
+                )
+            )]
+            K[biA_i,I0] += Gamma - Gg * Gamma_n
+            F[biA_i] = F[biA_i].toarray() + source(p[i]) - Gg * beta_i
+            K[i,biA_i] = -1
+            K[i,i] = 1
+            F[i] = alpha(p[i,:])
+            
     # Dirichlet boundaries
     K = sp.lil_matrix(K)
     F = sp.lil_matrix(F)

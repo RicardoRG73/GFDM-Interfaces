@@ -2,10 +2,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use(["seaborn-v0_8", "paper.mplstyle"])
+#plt.style.use(["seaborn-v0_8", "paper.mplstyle"])
 cmap_color = "plasma"
 
-def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), size=150, nums=False, alpha=1):
+def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), title:str=None, size=150, nums=False, alpha=1):
     """Scatter plot for different arrays of index nodes `b`
     
     Parameters
@@ -42,7 +42,7 @@ def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), size=150, nums=False
             plt.text(p[i,0], p[i,1], str(i))
     plt.axis('equal')
     plt.legend(loc=loc)
-    plt.title('Nodes')
+    plt.title(title)
     plt.xlabel("$x$")
     plt.ylabel("$y$")
     return fig
@@ -56,7 +56,7 @@ def plot_normal_vectors(b,p):
     plt.axis("equal")
     return fig
 
-def tri_surface(p, t, U, azim=-60, elev=30):
+def tri_surface(p, t, U, title:str=None, azim=-60, elev=30):
     """3D surface plot.
     
     Parameters
@@ -78,13 +78,14 @@ def tri_surface(p, t, U, azim=-60, elev=30):
         edgecolor=None,
         aa=False,
     )
+    plt.title(title)
     ax.view_init(azim=azim, elev=elev)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_zlabel('$U$')
     return fig, ax
 
-def contourf_plot(p, U, levels=20):
+def contourf_plot(p, U, levels=20, title:str=None):
     """Countourf of values `U`
     
     Parameters
@@ -98,6 +99,7 @@ def contourf_plot(p, U, levels=20):
     plt.tricontourf(p[:,0], p[:,1], U, levels, cmap=cmap_color)
     plt.colorbar()
     plt.axis('equal')
+    plt.title(title)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
     return fig
