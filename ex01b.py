@@ -84,17 +84,19 @@ br = np.asarray(bdofs[right]) - 1               # index of nodes on right bounda
 
 # Neumann nodes
 bn0 = np.asarray(bdofs[neumann0]) - 1
-bn0 = np.setdiff1d(bn0, np.array([0,4]))
+bn0 = np.setdiff1d(bn0, 0)
 bn1 = np.asarray(bdofs[neumann1]) - 1
-bn1 = np.setdiff1d(bn1, np.array([6,3]))
+bn1 = np.setdiff1d(bn1, 3)
 bn2 = np.asarray(bdofs[neumann2]) - 1
-bn2 = np.setdiff1d(bn2, np.array([2,7]))
+bn2 = np.setdiff1d(bn2, 2)
 bn3 = np.asarray(bdofs[neumann3]) - 1
-bn3 = np.setdiff1d(bn3, np.array([5,1]))
+bn3 = np.setdiff1d(bn3, 1)
 
 # Interface nodes
 biA = np.asarray(bdofs[interfaceA]) - 1
+biA = np.setdiff1d(biA, [4,6])
 biB = np.asarray(bdofs[interfaceB]) - 1
+biB = np.setdiff1d(biB, [5,7])
 
 # Interior nodes
 elementmarkers = np.asarray(elementmarkers)
@@ -152,28 +154,28 @@ plot_normal_vectors(biB, coords)
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,1,0,1])
 k0 = lambda p: 1
-k1 = lambda p: 1
-source = lambda p: 0
-fl = lambda p: 1
-fr = lambda p: 0
-fb = lambda p: 0
-ft = lambda p: 0
-beta = lambda p: 0.7
-alpha = lambda p: -0.3
+k1 = lambda p: 1e-1
+source = lambda p: 4
+fl = lambda p: p[0]**2 + p[1]**2
+fr = lambda p: p[0]**2 + p[1]**2
+fb = lambda p: p[0]**2 + p[1]**2
+ft = lambda p: p[0]**2 + p[1]**2
+beta = lambda p: 0
+alpha = lambda p: 0
 
 materials = {}
 materials['material0'] = [k0, m0]
 materials['material1'] = [k1, m1]
 
 neumann_boundaries = {}
-neumann_boundaries['neumann0'] = [k0, bn0, fb]
-neumann_boundaries['neumann1'] = [k0, bn1, ft]
-neumann_boundaries['neumann2'] = [k1, bn2, ft]
-neumann_boundaries['neumann3'] = [k1, bn3, fb]
 
 dirichlet_boundaries = {}
 dirichlet_boundaries["left"] = [bl, fl]
 dirichlet_boundaries["right"] = [br, fr]
+dirichlet_boundaries['neumann0'] = [bn0, fb]
+dirichlet_boundaries['neumann1'] = [bn1, ft]
+dirichlet_boundaries['neumann2'] = [bn2, ft]
+dirichlet_boundaries['neumann3'] = [bn3, fb]
 
 interfaces = {}
 interfaces["interface0"] = [k0, k1, biA, biB, beta, alpha, m0, m1]
@@ -193,7 +195,15 @@ K,F,U,p = create_system_K_F(
 )
 
 from plots import tri_surface
-tri_surface(p=p, t=faces, U=U, azim=-60, elev=30, title="Solution using $N = "+ str(coords.shape[0])+"$")
+tri_surface(
+    p=p,
+    t=faces,
+    U=U,
+    azim=-60,
+    elev=30,
+    title="Solution using $N = "+ str(coords.shape[0])+"$",
+    edgecolor="k"
+)
 
 from plots import contourf_plot
 contourf_plot(p=p, U=U, levels=30, title="Solution using $N = "+ str(coords.shape[0])+"$")

@@ -56,7 +56,7 @@ def plot_normal_vectors(b,p):
     plt.axis("equal")
     return fig
 
-def tri_surface(p, t, U, title:str=None, azim=-60, elev=30):
+def tri_surface(p, t, U, title:str=None, azim=-60, elev=30, edgecolor=None):
     """3D surface plot.
     
     Parameters
@@ -75,7 +75,7 @@ def tri_surface(p, t, U, title:str=None, azim=-60, elev=30):
         p[:,1],
         U,
         cmap=cmap_color,
-        edgecolor=None,
+        edgecolor=edgecolor,
         aa=False,
     )
     plt.title(title)
