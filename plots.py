@@ -19,7 +19,7 @@ def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), title:str=None, size
     size : integer or real
         Size of each node in the scatter plot.
     num : boolean
-        If `True` then text with the number of node is included.
+        If `True` then the number of node is included next to each node.
     """
     fig = plt.figure(figsize=figsize)
     i = 1
@@ -47,8 +47,8 @@ def plot_nodes(p, b, labels=(), loc='best', figsize=(14,7), title:str=None, size
     plt.ylabel("$y$")
     return fig
 
-def plot_normal_vectors(b,p):
-    fig = plt.figure(figsize=(14,7))
+def plot_normal_vectors(b,p, figsize=(14,7)):
+    fig = plt.figure(figsize=figsize)
     plt.scatter(p[b,0], p[b,1], s=70)
     from GFDMI import normal_vectors
     n = normal_vectors(b,p)
@@ -56,7 +56,7 @@ def plot_normal_vectors(b,p):
     plt.axis("equal")
     return fig
 
-def tri_surface(p, t, U, title:str=None, azim=-60, elev=30, edgecolor=None):
+def tri_surface(p, t, U, title:str=None, alpha=1, azim=-60, elev=30, edgecolor=None, figsize=(9,8)):
     """3D surface plot.
     
     Parameters
@@ -68,15 +68,16 @@ def tri_surface(p, t, U, title:str=None, azim=-60, elev=30, edgecolor=None):
     U : ndarray
         Values in each node.
     """
-    fig = plt.figure(figsize=(9,8))
+    fig = plt.figure(figsize=figsize)
     ax = plt.axes(projection='3d')
     ax.plot_trisurf(
         p[:,0],
         p[:,1],
         U,
         cmap=cmap_color,
-        edgecolor=edgecolor,
         aa=False,
+        alpha=alpha,
+        edgecolor=edgecolor
     )
     plt.title(title)
     ax.view_init(azim=azim, elev=elev)
@@ -85,7 +86,7 @@ def tri_surface(p, t, U, title:str=None, azim=-60, elev=30, edgecolor=None):
     ax.set_zlabel('$U$')
     return fig, ax
 
-def contourf_plot(p, U, levels=20, title:str=None):
+def contourf_plot(p, U, levels=20, title:str=None, figsize=(16,8)):
     """Countourf of values `U`
     
     Parameters
@@ -95,7 +96,7 @@ def contourf_plot(p, U, levels=20, title:str=None):
     U : ndarray
         Values in each node.
     """
-    fig = plt.figure(figsize=(16,8))
+    fig = plt.figure(figsize=figsize)
     plt.tricontourf(p[:,0], p[:,1], U, levels, cmap=cmap_color)
     plt.colorbar()
     plt.axis('equal')
