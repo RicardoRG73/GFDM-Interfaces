@@ -29,10 +29,10 @@ def normal_vectors(b,p):
         centroid = np.mean(p,axis=0)
         for i in b:
             d = np.sqrt((p[i,0]-p[b,0])**2 + (p[i,1]-p[b,1])**2)
-            imin = b[d.argsort()[:3]]
+            imin = b[d.argsort()[:7]]
             pm = np.mean(p[imin,:], axis=0)
-            v1 = p[imin[1]] - pm
-            v2 = p[imin[2]] - pm
+            v1 = p[imin[5]] - pm
+            v2 = p[imin[6]] - pm
             ni = rotation @ (v2-v1) / np.linalg.norm(v2-v1)
             ni = ni * np.dot(ni , p[i]-centroid)
             ni = ni / np.linalg.norm(ni)

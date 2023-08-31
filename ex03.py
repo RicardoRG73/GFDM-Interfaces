@@ -59,7 +59,8 @@ geometry.point([1,1])      # 2
 geometry.point([0,1])     # 3
 
 # points: interface-boundaries intersection
-delta_interface = 0.1
+delta_interface = 0.001
+
 geometry.point([0.5 - delta_interface, 0])     # 4
 geometry.point([0.5 - delta_interface, 1])     # 5
 geometry.point([0.5 + delta_interface, 0])     # 6
@@ -79,7 +80,7 @@ geometry.spline([2,7], marker=dirichlet)    # 5
 ## left interface
 interface_left = 11
 ### points
-N = 4
+N = 11
 delta_y = 1/(N+1)
 y = 0
 
@@ -148,7 +149,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.1
+mesh.el_size_factor = 0.03
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -213,6 +214,109 @@ plot_nodes(
 from plots import plot_normal_vectors
 plot_normal_vectors(bil, coords)
 plot_normal_vectors(bir, coords)
-plot_normal_vectors(bd, coords)
+
+plot_nodes(coords, bil, nums=True)
+""" Problem parameters """
+# L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
+# a differential lineal operator as:
+# \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
+L = np.array([0,0,0,1,0,1])
+kl = lambda p: 1
+kr = lambda p: 1
+source = lambda p: 4
+def fd(p):
+    if p[0] < 0.5:
+        value = np.sin(np.pi*p[0]) * np.sin(np.pi*p[1])
+    else:
+        value = np.sin(np.pi*p[0]) * (
+            np.sin(np.pi*p[1])
+            - np.exp(np.pi*p[1])
+        )
+        
+    return value
+# u_n jump
+from GFDMI import normal_vectors
+def v(p):
+    n = normal_vectors(bil, coords)
+    dists2 = (coords[bil,0]-p[0])**2 + (coords[bil,1]-p[1])**2
+    tol = 1e-5
+    n = n[dists2 <= tol, :][0]
+    value = np.pi * (
+        np.cos(np.pi*p[0]) * np.exp(np.pi*p[1]) * 1#n[0]
+        + np.sin(np.pi*p[0]) * np.exp(np.pi*p[1]) * 0#n[1]
+    )
+    return value
+# u_jump
+w = lambda p: np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
+
+materials = {}
+materials['material_left'] = [kl, ml]
+materials['material_right'] = [kr, mr]
+
+neumann_boundaries = {}
+
+dirichlet_boundaries = {}
+dirichlet_boundaries["dirichlet"] = [bd, fd]
+
+interfaces = {}
+interfaces["interface0"] = [kl, kr, bil, bir, w, v, ml, mr]
+
+
+""" System `KU=F` assembling """
+from GFDMI import create_system_K_F
+K,F,U,p = create_system_K_F(
+    p=coords,
+    triangles=faces,
+    L=L,
+    source=source,
+    materials=materials,
+    neumann_boundaries=neumann_boundaries,
+    dirichlet_boundaries=dirichlet_boundaries,
+    interfaces = interfaces
+)
+
+from plots import tri_surface
+tri_surface(
+    p=p,
+    t=faces,
+    U=U,
+    azim=30,
+    elev=30,
+    title="Numerical Solution using $N = "+ str(coords.shape[0])+"$",
+    edgecolor="k"
+)
+
+from plots import contourf_plot
+contourf_plot(p=p, U=U, levels=30, title="Numerical Solution using $N = "+ str(coords.shape[0])+"$")
+plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
+plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
+
+def exact(p):
+    if p[0] < 0.5 + 0.1 * np.sin(6.28 * p[1]):
+        value = np.sin(np.pi*p[0]) * np.sin(np.pi*p[1])
+    else:
+        value = np.sin(np.pi*p[0]) * (
+            np.sin(np.pi*p[1])
+            - np.exp(np.pi*p[1])
+        )
+    return value
+
+U = np.zeros(shape=U.shape)
+for i in range(U.shape[0]):
+    U[i] = exact(coords[i,:])
+
+tri_surface(
+    p=p,
+    t=faces,
+    U=U,
+    azim=30,
+    elev=30,
+    title="Exact Solution using $N = "+ str(coords.shape[0])+"$",
+    edgecolor="k"
+)
+
+contourf_plot(p=p, U=U, levels=30, title="Exact Solution using $N = "+ str(coords.shape[0])+"$")
+plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
+plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
 
 plt.show()
