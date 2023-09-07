@@ -241,20 +241,21 @@ def fd(p):
         )
         
     return value
-# u_n jump
+# u_n jump ---- beta
 from GFDMIex03 import normal_vectors
 def v(p):
     n = normal_vectors(bil, coords)
-    dists2 = (coords[bil,0]-p[0])**2 + (coords[bil,1]-p[1])**2
-    tol = 1e-5
-    n = n[dists2 <= tol, :][0]
+    i = np.argmin(
+                np.sqrt(
+                    (coords[bil,0]-p[0])**2 + (coords[bil,1]-p[1])**2
+                ))
     value = np.pi * (
-        np.cos(np.pi*p[0]) * np.exp(np.pi*p[1]) * 1#n[0]
-        + np.sin(np.pi*p[0]) * np.exp(np.pi*p[1]) * 0#n[1]
+        np.cos(np.pi*p[0]) * np.exp(np.pi*p[1]) * n[i,0]
+        + np.sin(np.pi*p[0]) * np.exp(np.pi*p[1]) * n[i,1]
     )
     return value
-# u_jump
-w = lambda p: np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
+# u_jump ---- alpha
+w = lambda p: -np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
 
 materials = {}
 materials['material_left'] = [kl, ml]
@@ -266,7 +267,7 @@ dirichlet_boundaries = {}
 dirichlet_boundaries["dirichlet"] = [bd, fd]
 
 interfaces = {}
-interfaces["interface0"] = [kl, kr, bil, bir, w, v, ml, mr]
+interfaces["interface0"] = [kl, kr, bil, bir, v, w, ml, mr]
 
 
 """ System `KU=F` assembling """

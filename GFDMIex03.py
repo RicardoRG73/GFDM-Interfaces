@@ -13,8 +13,10 @@ def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
     return I
 
 def normal_vectors(b,p):
-    N = b.shape[0]
-    n = np.kron(np.ones(N),np.array([1,0])).reshape((N,2))
+    n = np.zeros((b.shape[0],2))
+    for i in range(b.shape[0]):
+        n[i,:] = np.array([ 1,  -0.628*np.cos(6.28*p[b[i],1]) ])
+        n[i,:] *= 1 / np.linalg.norm(n[i,:])
     return n
 
 def create_system_K_F(
