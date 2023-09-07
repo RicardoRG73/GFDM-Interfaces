@@ -149,7 +149,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.03
+mesh.el_size_factor = 0.1
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -211,11 +211,18 @@ plot_nodes(
     title="Total nodes $N = "+ str(coords.shape[0])+"$"
 )
 
-from plots import plot_normal_vectors
+def plot_normal_vectors(b,p, figsize=(14,7)):
+    fig = plt.figure(figsize=figsize)
+    plt.scatter(p[b,0], p[b,1], s=70)
+    from GFDMIex03 import normal_vectors
+    n = normal_vectors(b,p)
+    plt.quiver(p[b,0], p[b,1], n[:,0], n[:,1], alpha=0.5)
+    plt.axis("equal")
+    return fig
+
 plot_normal_vectors(bil, coords)
 plot_normal_vectors(bir, coords)
 
-plot_nodes(coords, bil, nums=True)
 """ Problem parameters """
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
 # a differential lineal operator as:
@@ -235,7 +242,7 @@ def fd(p):
         
     return value
 # u_n jump
-from GFDMI import normal_vectors
+from GFDMIex03 import normal_vectors
 def v(p):
     n = normal_vectors(bil, coords)
     dists2 = (coords[bil,0]-p[0])**2 + (coords[bil,1]-p[1])**2
@@ -263,7 +270,7 @@ interfaces["interface0"] = [kl, kr, bil, bir, w, v, ml, mr]
 
 
 """ System `KU=F` assembling """
-from GFDMI import create_system_K_F
+from GFDMIex03 import create_system_K_F
 K,F,U,p = create_system_K_F(
     p=coords,
     triangles=faces,
@@ -283,13 +290,14 @@ tri_surface(
     azim=30,
     elev=30,
     title="Numerical Solution using $N = "+ str(coords.shape[0])+"$",
-    edgecolor="k"
+    edgecolor="k",
+    alpha= 0.5
 )
 
-from plots import contourf_plot
-contourf_plot(p=p, U=U, levels=30, title="Numerical Solution using $N = "+ str(coords.shape[0])+"$")
-plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
-plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
+# from plots import contourf_plot
+# contourf_plot(p=p, U=U, levels=30, title="Numerical Solution using $N = "+ str(coords.shape[0])+"$")
+# plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
+# plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
 
 def exact(p):
     if p[0] < 0.5 + 0.1 * np.sin(6.28 * p[1]):
@@ -315,8 +323,8 @@ tri_surface(
     edgecolor="k"
 )
 
-contourf_plot(p=p, U=U, levels=30, title="Exact Solution using $N = "+ str(coords.shape[0])+"$")
-plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
-plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
+# contourf_plot(p=p, U=U, levels=30, title="Exact Solution using $N = "+ str(coords.shape[0])+"$")
+# plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
+# plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
 
 plt.show()
