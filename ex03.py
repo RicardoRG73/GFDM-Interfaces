@@ -1,6 +1,6 @@
 """
 Laplace equation with sinusoidal interface, and jumps in `u` and `u_n`
-[]
+[Siraj-ul-Islam, Masood Ahmad]
 
 $ \nabla^2 u = f $
 
@@ -59,7 +59,7 @@ geometry.point([1,1])      # 2
 geometry.point([0,1])     # 3
 
 # points: interface-boundaries intersection
-delta_interface = 0.001
+delta_interface = 0.01
 
 geometry.point([0.5 - delta_interface, 0])     # 4
 geometry.point([0.5 - delta_interface, 1])     # 5
@@ -149,7 +149,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.1
+mesh.el_size_factor = 0.5
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -188,6 +188,7 @@ mr = faces[elementmarkers == right_domain]
 mr = mr.flatten()
 mr = np.setdiff1d(mr,B)
 
+plt.style.use(["seaborn-v0_8", "seaborn-v0_8-talk"])
 from plots import plot_nodes
 plot_nodes(
     p=coords,
@@ -301,7 +302,7 @@ tri_surface(
 # plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
 
 def exact(p):
-    if p[0] < 0.5 + 0.1 * np.sin(6.28 * p[1]):
+    if p[0] <= 0.5 + 0.1 * np.sin(6.28 * p[1]):
         value = np.sin(np.pi*p[0]) * np.sin(np.pi*p[1])
     else:
         value = np.sin(np.pi*p[0]) * (
@@ -310,14 +311,14 @@ def exact(p):
         )
     return value
 
-U = np.zeros(shape=U.shape)
+Uex = np.zeros(shape=U.shape)
 for i in range(U.shape[0]):
-    U[i] = exact(coords[i,:])
+    Uex[i] = exact(coords[i,:])
 
 tri_surface(
     p=p,
     t=faces,
-    U=U,
+    U=Uex,
     azim=30,
     elev=30,
     title="Exact Solution using $N = "+ str(coords.shape[0])+"$",
@@ -327,5 +328,42 @@ tri_surface(
 # contourf_plot(p=p, U=U, levels=30, title="Exact Solution using $N = "+ str(coords.shape[0])+"$")
 # plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
 # plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
+
+# Root Mean Square Error
+RMSE = np.sqrt(
+    np.mean(
+        (Uex - U)**2
+    )
+)
+
+print("\n===============")
+print("RMSE = %1.4e" %RMSE)
+print("===============")
+
+# Norm 2
+n2 = np.linalg.norm(Uex-U)
+print("\n===============")
+print("Norm 2 = %1.4e" %n2)
+print("===============")
+
+
+# Different errors with different number of nodes N
+# mesh.el_size_factor & N & RMSE & norm2
+errors = np.array([
+    [0.5, 115, 0.54716, 0.58677],
+    [0.1, 291, 0.37866, 0.64594],
+    [0.05, 589, 0.36473, 0.88518],
+    [0.04, 1057, 0.37382, 0.12153],
+    [0.03, 1713, 0.37808, 0.15648],
+    [0.02, 3359, 0.37121, 0.21514],
+    [0.01, 12495, 0.37350, 0.41751]
+])
+
+plt.figure()
+plt.plot(errors[:,1], errors[:,2], "-o", label="RMSE")
+plt.plot(errors[:,1], errors[:,3], "-o", label="norm 2")
+plt.legend()
+plt.xlabel("Number of nodes $N$")
+plt.ylabel("Error")
 
 plt.show()
