@@ -9,18 +9,18 @@ def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
     Parameters
     ----------
     i : int
-        Index of central node.
-    triangles : numpy.ndarray with shape (n,3)
-        Index for the n triangles with 3 nodes each.
+        index of central node.
+    triangles : numpy.ndarray
+        array with shape (n,3), containing index of the n triangles with 3 nodes each.
     min_support_nodes : int, optional
-        Number of minimum support nodes. The default is 5.
+        number of minimum support nodes. The default is 5.
     max_iter : int, optional
         number of maximun iterations for adding support nodes to the list `I`. The default is 2.
 
     Returns
     -------
     I : numpy.ndarray
-        Index of the support nodes of central node `i`.
+        index of the support nodes of central node `i`.
     """
     I = np.array([i])                                                   # Initialices I with the index of central node i
     iter = 1                                                            # Initialices interation count
