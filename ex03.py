@@ -273,7 +273,7 @@ interfaces["interface0"] = [kl, kr, bil, bir, v, w, ml, mr]
 
 """ System `KU=F` assembling """
 from GFDMIex03 import create_system_K_F
-K,F,U,p = create_system_K_F(
+K,F,U = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -286,7 +286,7 @@ K,F,U,p = create_system_K_F(
 
 from plots import tri_surface
 tri_surface(
-    p=p,
+    p=coords,
     t=faces,
     U=U,
     azim=30,
@@ -316,7 +316,7 @@ for i in range(U.shape[0]):
     Uex[i] = exact(coords[i,:])
 
 tri_surface(
-    p=p,
+    p=coords,
     t=faces,
     U=Uex,
     azim=30,

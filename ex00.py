@@ -122,7 +122,7 @@ dirichlet_boundaries["bottom"] = [bb, fb]
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
-K,F,U,p = create_system_K_F(
+K,F,U = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -133,9 +133,9 @@ K,F,U,p = create_system_K_F(
 )
 
 from plots import tri_surface
-tri_surface(p=p, t=faces, U=U, azim=-120, elev=30)
+tri_surface(p=coords, t=faces, U=U, azim=-120, elev=30)
 
 from plots import contourf_plot
-contourf_plot(p=p, U=U, levels=30)
+contourf_plot(p=coords, U=U, levels=30)
 
 plt.show()

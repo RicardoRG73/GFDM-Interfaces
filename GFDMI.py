@@ -263,4 +263,4 @@ def create_system_K_F(
 
     U = sp.linalg.spsolve(K,F)
 
-    return K, F, U, p
+    return K, F, U
