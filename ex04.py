@@ -139,6 +139,7 @@ K,F,U = create_system_K_F(
     interfaces = interfaces
 )
 
+
 plt.figure()
 plt.tricontourf(
     coords[:,0],
