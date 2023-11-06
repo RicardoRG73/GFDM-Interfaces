@@ -2,14 +2,33 @@ import numpy as np
 import scipy.sparse as sp
 
 def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
-    I = np.array([i])
-    iter = 1
-    while I.shape[0] < min_support_nodes and iter <= max_iter:
-        temp =  np.any( np.isin(triangles,I), axis=1)
-        temp = triangles[temp,:].flatten()
-        I = np.setdiff1d(temp,i)
-        I = np.hstack((i,I))
-        iter += 1
+    """
+    Returns the index of support nodes `I` correspondig to the central node
+    with index `ì`. 
+    
+    Parameters
+    ----------
+    i : int
+        Index of central node.
+    triangles : numpy.ndarray with shape (n,3)
+        Index for the n triangles with 3 nodes each.
+    min_support_nodes : int, optional
+        Number of minimum support nodes. The default is 5.
+    max_iter : int, optional
+        number of maximun iterations for adding support nodes to the list `I`. The default is 2.
+
+    Returns
+    -------
+    I : numpy.ndarray
+        Index of the support nodes of central node `i`.
+    """
+    I = np.array([i])                                                   # Initialices I with the index of central node i
+    iter = 1                                                            # Initialices interation count
+    while I.shape[0] < min_support_nodes and iter <= max_iter:          # Checks support nodes (minimum 5) and iteration (max 2)
+        temp =  np.any( np.isin(triangles,I), axis=1)                   # Boolean array for triangles containing center node i
+        temp = triangles[temp,:].flatten()                              # Keeping triangles contaning center node i, and flatten as 0 dimension array
+        I = np.unique(I)                                                # Deleting repetitions
+        iter += 1                                                       # Increase the iteration counter
     return I
 
 def normal_vectors(b,p):
