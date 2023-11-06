@@ -106,7 +106,7 @@ plt.legend()
 
 
 L = np.array([0,0,0,1,0,1])
-k = lambda p: 10
+k = lambda p: 1
 source = lambda p: 0
 neu_cond = lambda p: 0
 dir_izq = lambda p: 8
@@ -139,7 +139,21 @@ K,F,U = create_system_K_F(
     interfaces = interfaces
 )
 
+# =============================================================================
+# Plots
+# =============================================================================
 
+# 3D
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap=cmap_color
+)
+
+# Contourf
 plt.figure()
 plt.tricontourf(
     coords[:,0],
@@ -150,14 +164,13 @@ plt.tricontourf(
 )
 plt.axis("equal")
 plt.colorbar()
-
-plt.figure()
-ax = plt.axes(projection="3d")
-ax.plot_trisurf(
+# line h=0
+plt.tricontour(
     coords[:,0],
     coords[:,1],
-    U,
-    cmap=cmap_color
+    (U - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
 )
 
 plt.show()
