@@ -27,7 +27,7 @@ def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
     while I.shape[0] < min_support_nodes and iter <= max_iter:          # Checks support nodes (minimum 5) and iteration (max 2)
         temp =  np.any( np.isin(triangles,I), axis=1)                   # Boolean array for triangles containing center node i
         temp = triangles[temp,:].flatten()                              # Keeping triangles contaning center node i, and flatten as 0 dimension array
-        I = np.unique(I)                                                # Deleting repetitions
+        I = np.unique(temp)                                                # Deleting repetitions
         iter += 1                                                       # Increase the iteration counter
     return I
 

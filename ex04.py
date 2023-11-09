@@ -14,7 +14,7 @@ g = cfg.Geometry()  # Create a GeoData object that holds the geometry.
 g.point([3, 0]) #0
 g.point([21, 0]) #1
 g.point([29, 0]) #2
-g.point([40, 0], el_size=0.01) #3
+g.point([40, 0]) #3
 g.point([47, 0]) #4
 g.point([27, 10]) #5
 g.point([23, 10]) #6
@@ -80,7 +80,7 @@ bnb = np.setdiff1d(bnb , np.intersect1d(bnb,bizq))
 bnb = np.setdiff1d(bnb , np.intersect1d(bnb,bder))
 bnt = np.asarray(bdofs[Hntop])
 bnt = np.setdiff1d(bnt , np.intersect1d(bnt,bizq))
-bnt = np.setdiff1d(bnt , np.intersect1d(bnt,bnt))
+bnt = np.setdiff1d(bnt , np.intersect1d(bnt,bder))
 
 
 B = np.hstack((bizq, bder, bnb, bnt))
@@ -94,7 +94,7 @@ plt.figure(figsize=(6,2))
 opacity = 0.5
 node_size = 40
 
-plt.scatter(coords[interior,0], coords[interior,1], label="interior", alpha=opacity)
+# plt.scatter(coords[interior,0], coords[interior,1], label="interior", alpha=opacity)
 
 plt.scatter(coords[bizq,0], coords[bizq,1], label="bizq", alpha=opacity)
 plt.scatter(coords[bder,0], coords[bder,1], label="bder", alpha=opacity)
@@ -113,7 +113,7 @@ dir_izq = lambda p: 8
 dir_der = lambda p: 0
 
 
-from GFDMIex03 import create_system_K_F
+from GFDMI import create_system_K_F
 
 material = {}
 material["0"] = [k, interior]
@@ -174,3 +174,126 @@ plt.tricontour(
 )
 
 plt.show()
+
+# =============================================================================
+# No estacionario (Ecuación de Difusión)
+# \nabla^2 u + f = du/dt
+# =============================================================================
+from scipy.integrate import solve_ivp
+
+F = F.toarray().flatten()
+
+
+t = [0,10]
+fun = lambda t,U: K@U - F
+U0 = np.zeros(coords.shape[0])
+U0[bizq] = 8
+U0[bder] = 0
+# U0[bnb] = 8*(1 - coords[bnb,0]/40)
+# U0[bnt] = coords[bnt,1]
+
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U0,
+    cmap=cmap_color
+)
+ax.set_title("Condición inicial $U_0$")
+
+sol = solve_ivp(fun, t, U0)
+
+U2 = sol.y
+# plots
+cmap_color = "summer"
+fig = plt.figure()
+# 1
+indice = 0
+ax = plt.subplot(2,2,1)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 2
+indice = U2.shape[1] // 3
+ax = plt.subplot(2,2,2)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 3
+indice = U2.shape[1] // 3 * 2
+ax = plt.subplot(2,2,3)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 4
+indice = -1
+ax = plt.subplot(2,2,4)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+
+
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,-1],
+    cmap="plasma"
+)
+ax.set_title("Sol $U$ en $t=%1.4f$" %sol.t[-1])
+
+print("\n\nNúmero de condición de K: %1.3e" %np.linalg.cond(K.toarray()))
