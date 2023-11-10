@@ -184,7 +184,7 @@ from scipy.integrate import solve_ivp
 F = F.toarray().flatten()
 
 
-t = [0,10]
+t = [0,200]
 fun = lambda t,U: K@U - F
 U0 = np.zeros(coords.shape[0])
 U0[bizq] = 8
