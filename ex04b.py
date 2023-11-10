@@ -132,3 +132,202 @@ plt.legend()
 # =============================================================================
 # Problem parameters
 # =============================================================================
+L = np.array([0,0,0,1,0,1])
+kr = lambda p: 10
+kc = lambda p: 1
+source = lambda p: 0
+neu_cond = lambda p: 0
+dir_izq = lambda p: 8
+dir_der = lambda p: 0
+beta = lambda p: 0
+
+# =============================================================================
+# Assembling and solving system KU=F
+# =============================================================================
+from GFDMI import create_system_K_F_cont_U
+
+material = {}
+material["rock"] = [kr, rock]
+material["clay"] = [kc, clay]
+
+neumann = {}
+neumann["0"] = [kr, bnb, neu_cond]
+neumann["1"] = [kr, bnt, neu_cond]
+
+dirichlet = {}
+dirichlet["izq"] = [bizq, dir_izq]
+dirichlet["der"] = [bder, dir_der]
+
+interfaces = {}
+interfaces["A"] = [kr, kc, bia, beta, rock, clay]
+interfaces["B"] = [kc, kr, bib, beta, clay, rock]
+
+K,F,U = create_system_K_F_cont_U(
+    p=coords,
+    triangles=Elementos,
+    L=L,
+    source=source,
+    materials=material,
+    neumann_boundaries=neumann,
+    dirichlet_boundaries=dirichlet,
+    interfaces = interfaces
+)
+
+# =============================================================================
+# Plotting U
+# =============================================================================
+# 3D
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap=cmap_color
+)
+
+# Contourf
+plt.figure()
+plt.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap=cmap_color,
+    levels=20
+)
+plt.axis("equal")
+plt.colorbar()
+# line h=0
+plt.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+
+
+# =============================================================================
+# No estacionario (Ecuación de Difusión)
+# \nabla^2 u + f = du/dt
+# =============================================================================
+from scipy.integrate import solve_ivp
+
+F = F.toarray().flatten()
+
+
+t = [0,30]
+fun = lambda t,U: K@U - F
+U0 = np.zeros(coords.shape[0])
+U0[bizq] = 8
+U0[bder] = 0
+# U0[bnb] = 8*(1 - coords[bnb,0]/40)
+# U0[bnt] = coords[bnt,1]
+
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U0,
+    cmap=cmap_color
+)
+ax.set_title("Condición inicial $U_0$")
+
+sol = solve_ivp(fun, t, U0)
+
+U2 = sol.y
+# plots
+cmap_color = "summer"
+fig = plt.figure()
+# 1
+indice = 0
+ax = plt.subplot(2,2,1)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 2
+indice = U2.shape[1] // 3
+ax = plt.subplot(2,2,2)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 3
+indice = U2.shape[1] // 3 * 2
+ax = plt.subplot(2,2,3)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+# 4
+indice = -1
+ax = plt.subplot(2,2,4)
+ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,indice],
+    cmap=cmap_color,
+    levels=20
+)
+ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    (U2[:,indice] - coords[:,1])*9.81,
+    levels=[0.0],
+    colors="b"
+)
+ax.axis("equal")
+ax.set_title("$t = %1.4f$" %sol.t[indice])
+
+
+plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U2[:,-1],
+    cmap="plasma"
+)
+ax.set_title("Sol $U$ en $t=%1.4f$" %sol.t[-1])
+
+print("\n\nNúmero de condición de K: %1.3e" %np.linalg.cond(K.toarray()))
+
+plt.show()

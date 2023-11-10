@@ -173,8 +173,6 @@ plt.tricontour(
     colors="b"
 )
 
-plt.show()
-
 # =============================================================================
 # No estacionario (Ecuación de Difusión)
 # \nabla^2 u + f = du/dt
@@ -297,3 +295,5 @@ ax.plot_trisurf(
 ax.set_title("Sol $U$ en $t=%1.4f$" %sol.t[-1])
 
 print("\n\nNúmero de condición de K: %1.3e" %np.linalg.cond(K.toarray()))
+
+plt.show()
