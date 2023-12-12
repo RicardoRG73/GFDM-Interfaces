@@ -1,3 +1,4 @@
+#%%
 # =============================================================================
 # Importing needed libraries
 # =============================================================================
@@ -185,6 +186,8 @@ ax.plot_trisurf(
     U,
     cmap=cmap_color
 )
+plt.title(r"Solución estacionaria $\nabla^2 u = 0$")
+
 
 # Contourf
 plt.figure()
@@ -205,6 +208,7 @@ plt.tricontour(
     levels=[0.0],
     colors="b"
 )
+plt.title(r"Solución estacionaria $\nabla^2 u = 0$")
 
 
 # =============================================================================
@@ -331,3 +335,4 @@ ax.set_title("Sol $U$ en $t=%1.4f$" %sol.t[-1])
 print("\n\nNúmero de condición de K: %1.3e" %np.linalg.cond(K.toarray()))
 
 plt.show()
+# %%
