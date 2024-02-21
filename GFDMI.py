@@ -486,9 +486,9 @@ def create_system_K_F_cont_U(
         b = dirichlet_boundaries[boundary][0]
         u = dirichlet_boundaries[boundary][1]
         for i in b:
-            F -= K[:,i] * u(p[i])
+            # F -= K[:,i] * u(p[i])
             F[i] = u(p[i])
-            K[:,i] = 0
+            # K[:,i] = 0
             K[i,i] = 1
 
     K = sp.csr_matrix(K)
