@@ -278,7 +278,7 @@ def create_system_K_F(
             K[i,i] = 1
 
     K = sp.csr_matrix(K)
-    F = sp.csr_matrix(F)
+    F = F.toarray().flatten()
 
     return K, F
 
