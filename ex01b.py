@@ -1,6 +1,7 @@
 """ Importing needed libraries """
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.sparse as sp
 
 # calfem-python
 import calfem.geometry as cfg
@@ -183,7 +184,7 @@ interfaces["interface0"] = [k0, k1, biA, biB, beta, alpha, m0, m1]
 
 """ System `KU=F` assembling """
 from GFDMI import create_system_K_F
-K,F,U = create_system_K_F(
+K,F = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -193,6 +194,8 @@ K,F,U = create_system_K_F(
     dirichlet_boundaries=dirichlet_boundaries,
     interfaces = interfaces
 )
+
+U = sp.linalg.spsolve(K,F)
 
 from plots import tri_surface
 tri_surface(

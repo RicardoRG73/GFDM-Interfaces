@@ -4,6 +4,7 @@ import calfem.vis_mpl as cfv
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.sparse as sp
 
 plt.style.use(["seaborn-v0_8-darkgrid", "seaborn-v0_8-colorblind"])#, "seaeborn-v0_8-paper"])
 plt.rcParams["legend.frameon"] = True
@@ -128,7 +129,7 @@ dirichlet["der"] = [bder, dir_der]
 
 interfaces = {}
 
-K,F,U = create_system_K_F(
+K,F = create_system_K_F(
     p=coords,
     triangles=Elementos,
     L=L,
@@ -138,6 +139,8 @@ K,F,U = create_system_K_F(
     dirichlet_boundaries=dirichlet,
     interfaces = interfaces
 )
+
+U = sp.linalg.spsolve(K,F)
 
 # =============================================================================
 # Plots

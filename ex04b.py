@@ -8,6 +8,7 @@ import calfem.vis_mpl as cfv
 
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.sparse as sp
 
 plt.style.use(["seaborn-v0_8-darkgrid", "seaborn-v0_8-colorblind"])#, "seaeborn-v0_8-paper"])
 plt.rcParams["legend.frameon"] = True
@@ -163,7 +164,7 @@ interfaces = {}
 interfaces["A"] = [kr, kc, bia, beta, rock, clay]
 interfaces["B"] = [kc, kr, bib, beta, clay, rock]
 
-K,F,U = create_system_K_F_cont_U(
+K,F = create_system_K_F_cont_U(
     p=coords,
     triangles=Elementos,
     L=L,
@@ -173,6 +174,8 @@ K,F,U = create_system_K_F_cont_U(
     dirichlet_boundaries=dirichlet,
     interfaces = interfaces
 )
+
+U = sp.linalg.spsolve(K,F)
 
 # =============================================================================
 # Plotting U
@@ -245,81 +248,81 @@ U2 = sol.y
 cmap_color = "summer"
 fig = plt.figure()
 # 1
-indice = 0
+time_i = 0
 ax = plt.subplot(2,2,1)
 ax.tricontourf(
     coords[:,0],
     coords[:,1],
-    U2[:,indice],
+    U2[:,time_i],
     cmap=cmap_color,
     levels=20
 )
 ax.tricontour(
     coords[:,0],
     coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
+    (U2[:,time_i] - coords[:,1])*9.81,
     levels=[0.0],
     colors="b"
 )
 ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
+ax.set_title("$t = %1.4f$" %sol.t[time_i])
 # 2
-indice = U2.shape[1] // 3
+time_i = U2.shape[1] // 3
 ax = plt.subplot(2,2,2)
 ax.tricontourf(
     coords[:,0],
     coords[:,1],
-    U2[:,indice],
+    U2[:,time_i],
     cmap=cmap_color,
     levels=20
 )
 ax.tricontour(
     coords[:,0],
     coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
+    (U2[:,time_i] - coords[:,1])*9.81,
     levels=[0.0],
     colors="b"
 )
 ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
+ax.set_title("$t = %1.4f$" %sol.t[time_i])
 # 3
-indice = U2.shape[1] // 3 * 2
+time_i = U2.shape[1] // 3 * 2
 ax = plt.subplot(2,2,3)
 ax.tricontourf(
     coords[:,0],
     coords[:,1],
-    U2[:,indice],
+    U2[:,time_i],
     cmap=cmap_color,
     levels=20
 )
 ax.tricontour(
     coords[:,0],
     coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
+    (U2[:,time_i] - coords[:,1])*9.81,
     levels=[0.0],
     colors="b"
 )
 ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
+ax.set_title("$t = %1.4f$" %sol.t[time_i])
 # 4
-indice = -1
+time_i = -1
 ax = plt.subplot(2,2,4)
 ax.tricontourf(
     coords[:,0],
     coords[:,1],
-    U2[:,indice],
+    U2[:,time_i],
     cmap=cmap_color,
     levels=20
 )
 ax.tricontour(
     coords[:,0],
     coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
+    (U2[:,time_i] - coords[:,1])*9.81,
     levels=[0.0],
     colors="b"
 )
 ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
+ax.set_title("$t = %1.4f$" %sol.t[time_i])
 
 
 plt.figure()

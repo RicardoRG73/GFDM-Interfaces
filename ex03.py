@@ -41,6 +41,7 @@ Y = y
 # =============================================================================
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.sparse as sp
 
 # calfem-python
 import calfem.geometry as cfg
@@ -273,7 +274,7 @@ interfaces["interface0"] = [kl, kr, bil, bir, v, w, ml, mr]
 
 """ System `KU=F` assembling """
 from GFDMIex03 import create_system_K_F
-K,F,U = create_system_K_F(
+K,F = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -283,6 +284,8 @@ K,F,U = create_system_K_F(
     dirichlet_boundaries=dirichlet_boundaries,
     interfaces = interfaces
 )
+
+U = sp.linalg.spsolve(K,F)
 
 from plots import tri_surface
 tri_surface(
