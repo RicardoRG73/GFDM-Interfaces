@@ -24,9 +24,9 @@ g = cfg.Geometry()
 
 # points
 g.point([0,0])      # 0
-g.point([100,0])      # 1
-g.point([100,20])      # 2
-g.point([0,20])      # 3
+g.point([2,0])      # 1
+g.point([2,0.4])      # 2
+g.point([0,0.4])      # 3
 
 # lines
 left = 10
@@ -54,7 +54,7 @@ cfv.draw_geometry(g, draw_axis=True)
 # =============================================================================
 # Mesh
 # =============================================================================
-mesh = cfm.GmshMesh(g,el_size_factor=3)
+mesh = cfm.GmshMesh(g,el_size_factor=0.1)
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -120,9 +120,10 @@ plt.legend(loc="center")
 # Problem parameters
 # =============================================================================
 k = lambda p: 1
-f = lambda p: 0
+fu = lambda p: 0
+fv = lambda p: 0#-3e-8
 
-E = 100000
+E = 22e9
 nu = 0.2
 
 alpha = E * (1 - nu) / (1 + nu) / (1 - 2*nu)
@@ -146,7 +147,7 @@ L22 = [0,0,0,a[2,2],a[1,2]+a[2,1],a[1,1]]
 # =============================================================================
 fDir = lambda p: 0
 fNeu = lambda p: 0
-fNeu_load = lambda p: 3e-10
+fNeu_load = lambda p: 5e-13
 
 #%%
 # =============================================================================
@@ -159,25 +160,27 @@ materials["0"] = [k, interior]
 
 uDir = {}
 uDir["left"] = [nodesl, fDir]
+uDir["right"] = [nodesr, fDir]
 
 uNeu = {}
 uNeu["bottom"] = [k, nodesb, fNeu]
-uNeu["right"] = [k, nodesr, fNeu]
+# uNeu["right"] = [k, nodesr, fNeu]
 uNeu["top"] = [k, nodest, fNeu]
 
 vDir = {}
 vDir["left"] = [nodesl, fDir]
+vDir["right"] = [nodesr, fDir]
 
 vNeu = {}
 vNeu["bottom"] = [k, nodesb, fNeu]
-vNeu["right"] = [k, nodesr, fNeu]
+# vNeu["right"] = [k, nodesr, fNeu]
 vNeu["top"] = [k, nodest, fNeu_load]
 
 D11, F11 = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L11,
-    source=f,
+    source=fu,
     materials=materials,
     dirichlet_boundaries=uDir,
     neumann_boundaries=uNeu
@@ -186,7 +189,7 @@ D12, F12 = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L12,
-    source=f,
+    source=fv,
     materials=materials,
     dirichlet_boundaries=vDir,
     neumann_boundaries=vNeu
@@ -195,7 +198,7 @@ D21, F21 = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L21,
-    source=f,
+    source=fu,
     materials=materials,
     dirichlet_boundaries=uDir,
     neumann_boundaries=uNeu
@@ -204,7 +207,7 @@ D22, F22 = create_system_K_F(
     p=coords,
     triangles=faces,
     L=L12,
-    source=f,
+    source=fv,
     materials=materials,
     dirichlet_boundaries=vDir,
     neumann_boundaries=vNeu
@@ -230,6 +233,8 @@ A = sp.vstack((
     sp.hstack((D11, D12u)),
     sp.hstack((D21v, D22))
 ))
+
+A = sp.csr_array(A)
 
 F = np.hstack((
     F11 + F12u,
