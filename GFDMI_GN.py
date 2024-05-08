@@ -18,7 +18,8 @@ def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
     i : int
         index of central node.
     triangles : numpy.ndarray
-        array with shape (n,3), containing index of the n triangles with 3 nodes each.
+        array with shape (n,3), containing index of the n triangles
+        with 3 nodes each.
     min_support_nodes : int, optional
         number of minimum support nodes. The default is 5.
     max_iter : int, optional
@@ -28,6 +29,7 @@ def support_nodes(i,triangles, min_support_nodes=5, max_iter=2):
     -------
     I : numpy.ndarray
         index of the support nodes of central node `i`.
+    
     """
     I = np.array([i])                                                   # Initialices I with the index of central node i
     iter = 1                                                            # Initialices interation count
@@ -50,13 +52,13 @@ def normal_vectors(b,p):
     b : numpy.ndarray
         Index of boundary nodes.
     p : numpy.ndarray
-        Coordinates of all domain nodes.
+        2D coordinates of all domain nodes, with shape (num_nodes,2).
 
     Returns
     -------
     n : numpy.ndarray
-        Normal vectors for nodes `b`.
-
+        Normal vectors for nodes `b`, with shape (len(b),2).
+    
     """
     percentage_line_tolerance = 0.99
     N = b.shape[0]
@@ -88,6 +90,22 @@ def normal_vectors(b,p):
 
 
 def deltas_matrix(deltasx, deltasy):
+    """
+    Creates caracteristic-distances-matrix `M` of GFDM system `M\Gamma=L`. 
+
+    Parameters
+    ----------
+    deltasx : numpy.ndarray
+        Horizontal distances from central node `p_0` to support nodes `p_i`.
+    deltasy : numpy.ndarray
+        Vertical distances from central node `p_0` to support nodes `p_i`.
+
+    Returns
+    -------
+    M : numpy.ndarray
+        Distances matrix.
+    
+    """
     M = np.vstack((
         np.ones(deltasx.shape),
         deltasx,
@@ -121,13 +139,14 @@ def dirichlet_assembling(p,b,u,K,F):
 
 
 
-def interface_assembling(p,biA,biB,triangles,m1,m0,k0,k1,source,L,beta,alpha,K,F):
-    n = normal_vectors(biA,p)
-    for i in biA:
+def interface_assembling(p,b,triangles,m1,m0,k0,k1,source,L,beta,K,F):
+    # material 0
+    n = normal_vectors(b,p)
+    for i in b:
         I0 = support_nodes(i,triangles)
         I0 = np.setdiff1d(I0,m1)
 
-        ni = n[biA==i][0]
+        ni = n[b==i][0]
 
         deltasx = p[I0,0] - p[i,0]
         deltasy = p[I0,1] - p[i,1]
@@ -159,16 +178,15 @@ def interface_assembling(p,biA,biB,triangles,m1,m0,k0,k1,source,L,beta,alpha,K,F
         K[i,I0] = Gamma - Gg * Gamma_n
         F[i] = source(p[i]) - Gg * beta_i
     
-    # interface in material 1
-    n = normal_vectors(biB,p)
-    for i in biB:
-        I0 = support_nodes(i,triangles)
-        I0 = np.setdiff1d(I0,m0)
+    # material 1
+    for i in b:
+        I1 = support_nodes(i,triangles)
+        I1 = np.setdiff1d(I1,m0)
 
-        ni = -n[biB==i][0]
+        ni = -n[b==i][0]
 
-        deltasx = p[I0,0] - p[i,0]
-        deltasy = p[I0,1] - p[i,1]
+        deltasx = p[I1,0] - p[i,0]
+        deltasy = p[I1,1] - p[i,1]
         ghost = np.array([-np.mean(deltasx), -np.mean(deltasy)])
         norm_ghost = np.linalg.norm(ghost)
         ghostx, ghosty = norm_ghost * ni
@@ -195,21 +213,18 @@ def interface_assembling(p,biA,biB,triangles,m1,m0,k0,k1,source,L,beta,alpha,K,F
         Gg = Gamma_ghost / Gamma_n_ghost
         beta_i = beta(p[i])
         
-        biA_i = biA[np.argmin(
-            np.sqrt(
-                (p[biA,0]-p[i,0])**2 + (p[biA,1]-p[i,1])**2
-            )
-        )]
-        K[biA_i,I0] += Gamma - Gg * Gamma_n
-        F[biA_i] = F[biA_i].toarray() + source(p[i]) - Gg * beta_i
-        K[i,biA_i] = -1
-        K[i,i] = 1
-        F[i] = alpha(p[i,:])
-    return K, F
+        K[i,I1] += Gamma - Gg * Gamma_n
+        F[i] += F[i].toarray() + source(p[i]) - Gg * beta_i
 
 
+def Ln_gen(p,b,i):
+    n = normal_vectors(b,p)
+    ni = n[b==i][0]
+    nx, ny = ni
+    Ln = np.array([0,nx,ny,0,0,0])
+    return Ln
 
-def neumann_assembling(p,b,triangles,k,source,L,u_n,K,F):
+def neumann_assembling(p,b,triangles,k,source,L,u_n,K,F,Ln_gen=Ln_gen):
     n = normal_vectors(b,p)
     for i in b:
         I = support_nodes(i,triangles)
@@ -237,7 +252,8 @@ def neumann_assembling(p,b,triangles,k,source,L,u_n,K,F):
         Gamma = Gamma[1:]
 
         nx, ny = ni
-        Gamma_n = np.linalg.pinv(M) @ (k_i*np.array([0,nx,ny,0,0,0]))
+        Ln = Ln_gen(p,b,i)
+        Gamma_n = np.linalg.pinv(M) @ (k_i*Ln)
         Gamma_n_ghost = Gamma_n[0]
         Gamma_n = Gamma_n[1:]
         Gg = Gamma_ghost / Gamma_n_ghost
@@ -255,10 +271,50 @@ def create_system_K_F(
         materials,
         neumann_boundaries,
         dirichlet_boundaries,
-        interfaces={}
+        interfaces={},
+        Ln_gen=Ln_gen
     ):
-    """ 
-    Assembles `K` and `F` for system  `KU=F`
+    """
+    Assembles `K` and `F` for system  `KU=F`.
+
+    Parameters
+    ----------
+    p : numpy.ndarray
+        2D coordinates of all domain nodes, with shape (n_nodes,2).
+    triangles : numpy.ndarray
+        Array with shape (n,3), containing index of the n triangles
+        with 3 nodes each.
+    L : numpy.ndarray
+        Coefitiens vector `L` = [A,B,C,D,E,F] of GFDM system `M\Gamma=L`,
+        where each entrance multiplies each term of the linear differential
+        operator
+        `\mathb{L} = Au + Bu_x + Cu_y + Du_{xx} + Eu_{xy} + Fu_{yy}`.
+    source : function
+        Implemented for one node coordinates, e.g. `source = lambda p: p[0] + p[1]`.
+    materials : dict
+        Material properties, e.g. `materials["0"] = [k, interior]`, where `k` is
+        the permeability function, `interior` are index for interior nodes.
+    neumann_boundaries : dict
+        Neumann properties, e.g. `neumann_boundaries["bottom"] = [k, nodesb, fNeu]`,
+        where `k` is the permeability function, `nodesb` are index for
+        neumann boundary nodes, `fNeu` is a function for neumann prescribed values.
+    dirichlet_boundaries : dict
+        Dirichlet properties, e.g. `dirichlet_boundaries["left"] = [nodesl, fDir]`,
+        where `nodesl` are index for dirichlet boundary nodes, `fDir` is a
+        function for dirichlet prescribed values.
+    interfaces : dict, optional
+        Interfaces properties, e.g. `interfaces["A"] = [k0, k1, b, beta, m0, m1]`,
+        where `k0` is permeability of material0, `k1`is permeability of material1,
+        `beta` is source at the interface, `m0` are index of material0 nodes,
+        `m1` are index of material1 nodes. The default is {}.
+
+    Returns
+    -------
+    K : scipy.sparse._csr.csr_matrix
+        Stiffness matrix of system `KU=F`.
+    F : numpy.ndarray
+        Vector of forces of system `KU=F`.
+
     """
     L[3] *= 2
     L[5] *= 2
@@ -286,24 +342,22 @@ def create_system_K_F(
         k = neumann_boundaries[boundary][0]
         b = neumann_boundaries[boundary][1]
         u_n = neumann_boundaries[boundary][2]
-        K, F = neumann_assembling(p,b,triangles,k,source,L,u_n,K,F)
+        K, F = neumann_assembling(p,b,triangles,k,source,L,u_n,K,F,Ln_gen)
 
     # Interfaces
     for interface in interfaces:
         k0 = interfaces[interface][0]
         k1 = interfaces[interface][1]
-        biA = interfaces[interface][2]
-        biB = interfaces[interface][3]
-        beta = interfaces[interface][4]
-        alpha = interfaces[interface][5]
-        m0 = interfaces[interface][6]
-        m1 = interfaces[interface][7]
+        b = interfaces[interface][2]
+        beta = interfaces[interface][3]
+        m0 = interfaces[interface][4]
+        m1 = interfaces[interface][5]
 
         K = sp.lil_matrix(K)
         F = sp.lil_matrix(F)
         
         # interface in material 0
-        K, F = interface_assembling(p,biA,biB,triangles,m1,m0,k0,k1,source,L,beta,alpha,K,F)
+        K, F = interface_assembling(p,b,triangles,m1,m0,k0,k1,source,L,beta,K,F)
             
     # Dirichlet boundaries
     K = sp.lil_matrix(K)

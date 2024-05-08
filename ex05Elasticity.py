@@ -147,7 +147,7 @@ L22 = [0,0,0,a[2,2],a[1,2]+a[2,1],a[1,1]]
 # =============================================================================
 fDir = lambda p: 0
 fNeu = lambda p: 0
-fNeu_load = lambda p: 5e-13
+fNeu_load = lambda p: 5e-15
 
 #%%
 # =============================================================================
@@ -160,20 +160,20 @@ materials["0"] = [k, interior]
 
 uDir = {}
 uDir["left"] = [nodesl, fDir]
-uDir["right"] = [nodesr, fDir]
+# uDir["right"] = [nodesr, fDir]
 
 uNeu = {}
 uNeu["bottom"] = [k, nodesb, fNeu]
-# uNeu["right"] = [k, nodesr, fNeu]
+uNeu["right"] = [k, nodesr, fNeu]
 uNeu["top"] = [k, nodest, fNeu]
 
 vDir = {}
 vDir["left"] = [nodesl, fDir]
-vDir["right"] = [nodesr, fDir]
+# vDir["right"] = [nodesr, fDir]
 
 vNeu = {}
 vNeu["bottom"] = [k, nodesb, fNeu]
-# vNeu["right"] = [k, nodesr, fNeu]
+vNeu["right"] = [k, nodesr, fNeu]
 vNeu["top"] = [k, nodest, fNeu_load]
 
 D11, F11 = create_system_K_F(
