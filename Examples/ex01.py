@@ -1,6 +1,10 @@
-""" Importing needed libraries """
+#%% Importing needed libraries
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use("seaborn-v0_8")
+plt.rcParams["legend.frameon"] = True
+plt.rcParams["legend.shadow"] = True
+plt.rcParams["figure.autolayout"] = True
 import scipy.sparse as sp
 
 # calfem-python
@@ -8,8 +12,9 @@ import calfem.geometry as cfg
 import calfem.mesh as cfm
 import calfem.vis_mpl as cfv
 
+import GFDMI
 
-""" Creating geometry """
+#%% Creating geometry
 geometry = cfg.Geometry()                       # geometry object
 
 # points
@@ -28,22 +33,22 @@ geometry.point([interface_offset+delta, 1], el_size=el_size_scale_factor)     # 
 
 # lines
 left = 100
-neumann0 = 101
-interfaceA = 102
-neumann1 = 103
+neumann_bottom_left = 101
+left_interface = 102
+neumann_top_left = 103
 geometry.spline([3,0], marker=left)             # 0
-geometry.spline([0,4], marker=neumann0)         # 1
-geometry.spline([4,6], marker=interfaceA)       # 2
-geometry.spline([6,3], marker=neumann1)         # 3
+geometry.spline([0,4], marker=neumann_bottom_left)         # 1
+geometry.spline([4,6], marker=left_interface)       # 2
+geometry.spline([6,3], marker=neumann_top_left)         # 3
 
 right = 104
-neumann2 = 105
-interfaceB = 106
-neumann3 = 107
+neumann_top_right = 105
+right_interface = 106
+neumann_bottom_right = 107
 geometry.spline([1,2], marker=right)            # 4
-geometry.spline([2,7], marker=neumann2)         # 5
-geometry.spline([5,7], marker=interfaceB)       # 6
-geometry.spline([5,1], marker=neumann3)         # 7
+geometry.spline([2,7], marker=neumann_top_right)         # 5
+geometry.spline([5,7], marker=right_interface)       # 6
+geometry.spline([5,1], marker=neumann_bottom_right)         # 7
 
 # surfaces
 mat0 = 10
@@ -57,7 +62,7 @@ cfv.title('Geometry')
 cfv.draw_geometry(geometry)
 
 
-""" Creating mesh """
+#%% Creating mesh
 mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
@@ -78,113 +83,155 @@ cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
 
 
-""" Nodes indexing separated by boundary conditions """
+#%% Nodes indexing separated by boundary conditions
 # Dirichlet nodes
-bl = np.asarray(bdofs[left]) - 1                # index of nodes on left boundary
-br = np.asarray(bdofs[right]) - 1               # index of nodes on right boundary
+left_nodes = np.asarray(bdofs[left]) - 1                # index of nodes on left boundary
+right_nodes = np.asarray(bdofs[right]) - 1               # index of nodes on right boundary
 
 # Neumann nodes
-bn0 = np.asarray(bdofs[neumann0]) - 1
-bn0 = np.setdiff1d(bn0, 0)
-bn1 = np.asarray(bdofs[neumann1]) - 1
-bn1 = np.setdiff1d(bn1, 3)
-bn2 = np.asarray(bdofs[neumann2]) - 1
-bn2 = np.setdiff1d(bn2, 2)
-bn3 = np.asarray(bdofs[neumann3]) - 1
-bn3 = np.setdiff1d(bn3, 1)
+bottom_left_nodes = np.asarray(bdofs[neumann_bottom_left]) - 1
+bottom_left_nodes = np.setdiff1d(bottom_left_nodes, 0)
+top_left_nodes = np.asarray(bdofs[neumann_top_left]) - 1
+top_left_nodes = np.setdiff1d(top_left_nodes, 3)
+top_right_nodes = np.asarray(bdofs[neumann_top_right]) - 1
+top_right_nodes = np.setdiff1d(top_right_nodes, 2)
+bottom_right_nodes = np.asarray(bdofs[neumann_bottom_right]) - 1
+bottom_right_nodes = np.setdiff1d(bottom_right_nodes, 1)
 
 # Interface nodes
-biA = np.asarray(bdofs[interfaceA]) - 1
-biA = np.setdiff1d(biA, [4,6])
-biB = np.asarray(bdofs[interfaceB]) - 1
-biB = np.setdiff1d(biB, [5,7])
+left_interface_nodes = np.asarray(bdofs[left_interface]) - 1
+left_interface_nodes = np.setdiff1d(left_interface_nodes, [4,6])
+right_interface_nodes = np.asarray(bdofs[right_interface]) - 1
+right_interface_nodes = np.setdiff1d(right_interface_nodes, [5,7])
 
 # Interior nodes
 elementmarkers = np.asarray(elementmarkers)
-B = np.hstack((bl,br,bn0,bn1,bn2,bn3,biA,biB))
+boundaries = np.hstack((
+    left_nodes,
+    right_nodes,
+    bottom_left_nodes,
+    top_left_nodes,
+    top_right_nodes,
+    bottom_right_nodes,
+    left_interface_nodes,
+    right_interface_nodes
+))
 
-m0 = faces[elementmarkers == mat0]
-m0 = m0.flatten()
-m0 = np.setdiff1d(m0,B)
+interior_nodes_mat0 = faces[elementmarkers == mat0]
+interior_nodes_mat0 = interior_nodes_mat0.flatten()
+interior_nodes_mat0 = np.setdiff1d(interior_nodes_mat0,boundaries)
 
-m1 = faces[elementmarkers == mat1]
-m1 = m1.flatten()
-m1 = np.setdiff1d(m1,B)
+interior_nodes_mat1 = faces[elementmarkers == mat1]
+interior_nodes_mat1 = interior_nodes_mat1.flatten()
+interior_nodes_mat1 = np.setdiff1d(interior_nodes_mat1,boundaries)
 
-from plots import plot_nodes
-plot_nodes(
-    p=coords,
-    b=(
-       bl,
-       br,
-       bn0,
-       bn1,
-       bn2,
-       bn3,
-       biA,
-       biB,
-       m0,
-       m1
-    ),
-    labels=(
-        "Left",
-        "Right",
-        "Neu0",
-        "Neu1",
-        "Neu2",
-        "Neu3",
-        "Interface A",
-        "Interface B",
-        "Mat0",
-        "Mat1"
-    ),
-    alpha = 0.5,
-    loc="center",
-    nums=True,
-    title="Total nodes $N = "+ str(coords.shape[0])+"$"
+#%% ploting boundaries in different colors
+plt.figure()
+nodes = (
+    left_nodes,
+    right_nodes,
+    bottom_left_nodes,
+    top_left_nodes,
+    top_right_nodes,
+    bottom_right_nodes,
+    left_interface_nodes,
+    right_interface_nodes,
+    interior_nodes_mat0,
+    interior_nodes_mat1
 )
+labels = (
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Top-Left",
+    "Top-Right",
+    "Bottom-Right",
+    "Left Interface",
+    "Right Interface",
+    "Interior Material 0",
+    "Interior Material 1"
+)
+for b,label in zip(nodes, labels):
+    plt.scatter(coords[b,0], coords[b,1], label=label, alpha=0.5, s=20)
+plt.axis("equal")
+plt.title("$N = %d$" %coords.shape[0])
+plt.legend(loc="center")
 
-from plots import plot_normal_vectors
-plot_normal_vectors(biA, coords)
-plot_normal_vectors(biB, coords)
+#%% plotting normal vectors at interface
+plt.figure()
+
+nodes_to_plot = (left_interface_nodes, right_interface_nodes)
+labels = ("Left Interface", "Right Interface")
+colors = ("#394CC9", "#C92520")
+for nodes,label,color in zip(nodes_to_plot,labels,colors):
+    norm_vec = GFDMI.normal_vectors(nodes,coords)
+    plt.scatter(
+        coords[nodes,0],
+        coords[nodes,1],
+        alpha=0.5,
+        color=color,
+        label=label
+    )
+    plt.quiver(
+        coords[nodes,0],
+        coords[nodes,1],
+        norm_vec[:,0],
+        norm_vec[:,1],
+        alpha=0.5,
+        color=color,
+        label="Normal Vectors - " + label
+    )
+plt.axis("equal")
+plt.legend()
 
 
-""" Problem parameters """
+#%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
 # a differential lineal operator as:
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,1,0,1])
-k0 = lambda p: 1
-k1 = lambda p: 1e-1
-source = lambda p: 4
-fl = lambda p: p[0]**2 + p[1]**2
-fr = lambda p: p[0]**2 + p[1]**2
-fb = lambda p: p[0]**2 + p[1]**2
-ft = lambda p: p[0]**2 + p[1]**2
+permeability_mat0 = lambda p: 1
+permeability_mat1 = lambda p: 1e-1
+source = lambda p: -4
+left_condition = lambda p: p[0]**2 + p[1]**2
+right_condition = lambda p: p[0]**2 + p[1]**2
+bottom_condition = lambda p: p[0]**2 + p[1]**2
+top_condition = lambda p: p[0]**2 + p[1]**2
+# flux difference at interface du/dn|_{mat0} - du/dn|_{mat1} = beta
 beta = lambda p: 0
+# solution diference at interface u_{mat0} - u_{mat1} = alpha
 alpha = lambda p: 0
 
+#%% assembling boundary conditions in dictionaries
 materials = {}
-materials['material0'] = [k0, m0]
-materials['material1'] = [k1, m1]
+materials['material0'] = [permeability_mat0, interior_nodes_mat0]
+materials['material1'] = [permeability_mat1, interior_nodes_mat1]
 
 neumann_boundaries = {}
 
 dirichlet_boundaries = {}
-dirichlet_boundaries["left"] = [bl, fl]
-dirichlet_boundaries["right"] = [br, fr]
-dirichlet_boundaries['neumann0'] = [bn0, fb]
-dirichlet_boundaries['neumann1'] = [bn1, ft]
-dirichlet_boundaries['neumann2'] = [bn2, ft]
-dirichlet_boundaries['neumann3'] = [bn3, fb]
+dirichlet_boundaries["left"] =          [left_nodes,            left_condition]
+dirichlet_boundaries["right"] =         [right_nodes,           right_condition]
+dirichlet_boundaries['bottom_left'] =   [bottom_left_nodes,     bottom_condition]
+dirichlet_boundaries['top_left'] =      [top_left_nodes,        top_condition]
+dirichlet_boundaries['top_right_'] =    [top_right_nodes,       top_condition]
+dirichlet_boundaries['bottom_right'] =  [bottom_right_nodes,    bottom_condition]
 
 interfaces = {}
-interfaces["interface0"] = [k0, k1, biA, biB, beta, alpha, m0, m1]
+interfaces["interface"] = [
+    permeability_mat0,
+    permeability_mat1,
+    left_interface_nodes,
+    right_interface_nodes,
+    beta,
+    alpha,
+    interior_nodes_mat0,
+    interior_nodes_mat1
+]
 
 
-""" System `KU=F` assembling """
-from GFDMI import create_system_K_F
-K,F = create_system_K_F(
+#%% System `KU=F` assembling
+K,F = GFDMI.create_system_K_F(
     p=coords,
     triangles=faces,
     L=L,
@@ -195,22 +242,46 @@ K,F = create_system_K_F(
     interfaces = interfaces
 )
 
+#%% Solution
 U = sp.linalg.spsolve(K,F)
 
-from plots import tri_surface
-tri_surface(
-    p=coords,
-    t=faces,
-    U=U,
-    azim=-60,
-    elev=30,
-    title="Solution using $N = "+ str(coords.shape[0])+"$",
-    edgecolor="k"
+#%% contourf plot
+fig = plt.figure()
+ax = plt.axes()
+cont = ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap="plasma",
+    levels=11
 )
+fig.colorbar(cont)
+cont = ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    U,
+    colors="k",
+    levels=11
+)
+plt.clabel(cont, inline=True)
+plt.axis("equal")
+plt.xlabel("x")
+plt.ylabel("y")
 
-from plots import contourf_plot
-contourf_plot(p=coords, U=U, levels=30, title="Solution using $N = "+ str(coords.shape[0])+"$")
-plt.scatter(coords[biA,0], coords[biA,1], alpha=0.45, s=5, color="black")
-plt.scatter(coords[biB,0], coords[biB,1], alpha=0.45, s=5, color="white")
+#%% 3d plot
+fig = plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap="plasma",
+    aa=False
+)
+ax.view_init(30,-110)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("U")
 
+#%%
 plt.show()
