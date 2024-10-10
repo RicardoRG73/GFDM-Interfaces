@@ -191,16 +191,16 @@ plt.legend()
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,1,0,1])
 permeability_mat0 = lambda p: 1
-permeability_mat1 = lambda p: 1e-1
-source = lambda p: -4
-left_condition = lambda p: p[0]**2 + p[1]**2
-right_condition = lambda p: p[0]**2 + p[1]**2
-bottom_condition = lambda p: p[0]**2 + p[1]**2
-top_condition = lambda p: p[0]**2 + p[1]**2
+permeability_mat1 = lambda p: 0.1
+source = lambda p: -1
+left_condition = lambda p: 1 - p[1]**2
+right_condition = lambda p: 1
+bottom_condition = lambda p: 0
+top_condition = lambda p: 0
 # flux difference at interface du/dn|_{mat0} - du/dn|_{mat1} = beta
 beta = lambda p: 0
 # solution diference at interface u_{mat0} - u_{mat1} = alpha
-alpha = lambda p: 0
+alpha = lambda p: 0.5
 
 #%% assembling boundary conditions in dictionaries
 materials = {}
@@ -208,14 +208,14 @@ materials['material0'] = [permeability_mat0, interior_nodes_mat0]
 materials['material1'] = [permeability_mat1, interior_nodes_mat1]
 
 neumann_boundaries = {}
+neumann_boundaries['bottom_left'] =   [permeability_mat0,   bottom_left_nodes,  bottom_condition]
+neumann_boundaries['top_left'] =      [permeability_mat0,   top_left_nodes,     top_condition]
+neumann_boundaries['top_right_'] =    [permeability_mat1,   top_right_nodes,    top_condition]
+neumann_boundaries['bottom_right'] =  [permeability_mat1,   bottom_right_nodes, bottom_condition]
 
 dirichlet_boundaries = {}
-dirichlet_boundaries["left"] =          [left_nodes,            left_condition]
-dirichlet_boundaries["right"] =         [right_nodes,           right_condition]
-dirichlet_boundaries['bottom_left'] =   [bottom_left_nodes,     bottom_condition]
-dirichlet_boundaries['top_left'] =      [top_left_nodes,        top_condition]
-dirichlet_boundaries['top_right_'] =    [top_right_nodes,       top_condition]
-dirichlet_boundaries['bottom_right'] =  [bottom_right_nodes,    bottom_condition]
+dirichlet_boundaries["left"] =  [left_nodes,    left_condition]
+dirichlet_boundaries["right"] = [right_nodes,   right_condition]
 
 interfaces = {}
 interfaces["interface"] = [
@@ -278,7 +278,7 @@ ax.plot_trisurf(
     cmap="plasma",
     aa=False
 )
-ax.view_init(30,-110)
+ax.view_init(30,-120)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("U")
