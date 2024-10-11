@@ -36,11 +36,16 @@ X = 0.5 + 0.1\sin(6.28 y)
 Y = y
 """
 
+#%%
 # =============================================================================
 # Importing nedeed libraries
 # =============================================================================
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use("seaborn-v0_8")
+plt.rcParams["legend.frameon"] = True
+plt.rcParams["legend.shadow"] = True
+plt.rcParams["figure.autolayout"] = True
 import scipy.sparse as sp
 
 # calfem-python
@@ -48,6 +53,9 @@ import calfem.geometry as cfg
 import calfem.mesh as cfm
 import calfem.vis_mpl as cfv
 
+import GFDMIex03
+
+#%%
 # =============================================================================
 # Creating geometry object
 # =============================================================================
@@ -114,7 +122,6 @@ for i in range(N-1):
 ### left interface lines, conecting interface and boundaries
 geometry.spline([6,8+N], marker=interface_right)
 geometry.spline([7+2*N,7], marker=interface_right)
-    
 
 
 # surfaces
@@ -138,11 +145,12 @@ left_surf_index = np.hstack((
 ))
 geometry.surface(left_surf_index, marker=right_domain)
 
-# geometry plot
+#%% geometry plot
 cfv.figure(fig_size=(4,4))
 cfv.title('Geometry')
 cfv.draw_geometry(geometry)
 
+#%%
 # =============================================================================
 # Creating mesh
 # =============================================================================
@@ -150,7 +158,7 @@ mesh = cfm.GmshMesh(geometry)
 
 mesh.el_type = 2                            # type of element: 2 = triangle
 mesh.dofs_per_node = 1
-mesh.el_size_factor = 0.5
+mesh.el_size_factor = 0.1
 
 coords, edof, dofs, bdofs, elementmarkers = mesh.create()   # create the geometry
 verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
@@ -160,80 +168,96 @@ verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
     mesh.el_type
 )
 
-# mesh plot
+#%% mesh plot
 cfv.figure(fig_size=(8,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
 
+#%%
 # =============================================================================
 # Nodes indexing separated by boundary conditions
 # =============================================================================
 # Dirichlet nodes
-bd = np.asarray(bdofs[dirichlet]) - 1
+dirichlet_nodes = np.asarray(bdofs[dirichlet]) - 1
 
 # Interface nodes
-bil = np.asarray(bdofs[interface_left]) - 1
-bil = np.setdiff1d(bil, [4,5])
-bir = np.asarray(bdofs[interface_right]) - 1
-bir = np.setdiff1d(bir, [6,7])
+left_interface_nodes = np.asarray(bdofs[interface_left]) - 1
+left_interface_nodes = np.setdiff1d(left_interface_nodes, [4,5])
+right_interface_nodes = np.asarray(bdofs[interface_right]) - 1
+right_interface_nodes = np.setdiff1d(right_interface_nodes, [6,7])
 
 # Interior nodes
 elementmarkers = np.asarray(elementmarkers)
-B = np.hstack((bd,bil,bir))
+B = np.hstack((dirichlet_nodes,left_interface_nodes,right_interface_nodes))
 
-ml = faces[elementmarkers == left_domain]
-ml = ml.flatten()
-ml = np.setdiff1d(ml,B)
+left_interior_nodes = faces[elementmarkers == left_domain]
+left_interior_nodes = left_interior_nodes.flatten()
+left_interior_nodes = np.setdiff1d(left_interior_nodes,B)
 
-mr = faces[elementmarkers == right_domain]
-mr = mr.flatten()
-mr = np.setdiff1d(mr,B)
+right_interior_nodes = faces[elementmarkers == right_domain]
+right_interior_nodes = right_interior_nodes.flatten()
+right_interior_nodes = np.setdiff1d(right_interior_nodes,B)
 
-plt.style.use(["seaborn-v0_8", "seaborn-v0_8-talk"])
-from plots import plot_nodes
-plot_nodes(
-    p=coords,
-    b=(
-       bd,
-       bil,
-       bir,
-       ml,
-       mr
-    ),
-    labels=(
-        "Dirichlet",
-        "Interface left",
-        "Interface right",
-        r"$\Omega^+$",
-        r"$\Omega^-$"
-    ),
-    alpha = 0.3,
-    loc="center",
-    nums=True,
-    title="Total nodes $N = "+ str(coords.shape[0])+"$"
+#%% ploting boundaries in different colors
+plt.figure()
+nodes = (
+    dirichlet_nodes,
+    left_interface_nodes,
+    right_interface_nodes,
+    left_interior_nodes,
+    right_interior_nodes
 )
+labels=(
+    "Dirichlet",
+    "Interface left",
+    "Interface right",
+    r"$\Omega^+$",
+    r"$\Omega^-$"
+)
+for b,label in zip(nodes, labels):
+    plt.scatter(coords[b,0], coords[b,1], label=label)
+plt.axis("equal")
+plt.title("$N = %d$" %coords.shape[0])
+plt.legend()
 
-def plot_normal_vectors(b,p, figsize=(14,7)):
-    fig = plt.figure(figsize=figsize)
-    plt.scatter(p[b,0], p[b,1], s=70)
-    from GFDMIex03 import normal_vectors
-    n = normal_vectors(b,p)
-    plt.quiver(p[b,0], p[b,1], n[:,0], n[:,1], alpha=0.5)
-    plt.axis("equal")
-    return fig
+#%% plotting normal vectors
+plt.figure()
 
-plot_normal_vectors(bil, coords)
-plot_normal_vectors(bir, coords)
+nodes_to_plot = (left_interface_nodes, right_interface_nodes)
+labels = ("Left Interface", "Right Interface")
+colors = ("#394CC9", "#C92520")
+for nodes,label,color in zip(nodes_to_plot,labels,colors):
+    norm_vec = GFDMIex03.normal_vectors(nodes,coords)
+    plt.scatter(
+        coords[nodes,0],
+        coords[nodes,1],
+        alpha=0.5,
+        color=color,
+        label=label
+    )
+    plt.quiver(
+        coords[nodes,0],
+        coords[nodes,1],
+        norm_vec[:,0],
+        norm_vec[:,1],
+        alpha=0.5,
+        color=color,
+        label="Normal Vectors - " + label
+    )
+plt.axis("equal")
+plt.legend()
 
-""" Problem parameters """
+
+#%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
 # a differential lineal operator as:
 # \mathb{L}u = Au + Bu_{x} + Cu_{y} + Du_{xx} + Eu_{xy} + Fu_{yy}
 L = np.array([0,0,0,1,0,1])
-kl = lambda p: 1
-kr = lambda p: 1
+permeability_left = lambda p: 1
+permeability_right = lambda p: 1
 source = lambda p: 4
-def fd(p):
+
+def dirichlet_condition(p):
     if p[0] < 0.5:
         value = np.sin(np.pi*p[0]) * np.sin(np.pi*p[1])
     else:
@@ -241,38 +265,46 @@ def fd(p):
             np.sin(np.pi*p[1])
             - np.exp(np.pi*p[1])
         )
-        
     return value
-# u_n jump ---- beta
-from GFDMIex03 import normal_vectors
-def v(p):
-    n = normal_vectors(bil, coords)
+
+# flux diference du/dn|_{left} - du/dn|_{rignt} = beta 
+def beta(p):
+    n = GFDMIex03.normal_vectors(left_interface_nodes, coords)
     i = np.argmin(
-                np.sqrt(
-                    (coords[bil,0]-p[0])**2 + (coords[bil,1]-p[1])**2
-                ))
+        np.sqrt(
+            (coords[left_interface_nodes,0]-p[0])**2
+            +
+            (coords[left_interface_nodes,1]-p[1])**2
+        )
+    )
     value = np.pi * (
-        np.cos(np.pi*p[0]) * np.exp(np.pi*p[1]) * n[i,0]
-        + np.sin(np.pi*p[0]) * np.exp(np.pi*p[1]) * n[i,1]
+        np.cos(np.pi*p[0])
+        * np.exp(np.pi*p[1])
+        * n[i,0]
+        + np.sin(np.pi*p[0])
+        * np.exp(np.pi*p[1])
+        * n[i,1]
     )
     return value
-# u_jump ---- alpha
-w = lambda p: -np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
 
+# solution difference u|_{left} - u|_{right} = alpha
+alpha = lambda p: -np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
+
+#%% assembling boundary conditions in dictionaries
 materials = {}
-materials['material_left'] = [kl, ml]
-materials['material_right'] = [kr, mr]
+materials['material_left'] = [permeability_left, left_interior_nodes]
+materials['material_right'] = [permeability_right, right_interior_nodes]
 
 neumann_boundaries = {}
 
 dirichlet_boundaries = {}
-dirichlet_boundaries["dirichlet"] = [bd, fd]
+dirichlet_boundaries["dirichlet"] = [dirichlet_nodes, dirichlet_condition]
 
 interfaces = {}
-interfaces["interface0"] = [kl, kr, bil, bir, v, w, ml, mr]
+interfaces["interface0"] = [permeability_left, permeability_right, left_interface_nodes, right_interface_nodes, beta, alpha, left_interior_nodes, right_interior_nodes]
 
 
-""" System `KU=F` assembling """
+#%% Assembling system `KU=F`
 from GFDMIex03 import create_system_K_F
 K,F = create_system_K_F(
     p=coords,
@@ -285,25 +317,33 @@ K,F = create_system_K_F(
     interfaces = interfaces
 )
 
+#%% Solution of system `KU=F`
 U = sp.linalg.spsolve(K,F)
 
-from plots import tri_surface
-tri_surface(
-    p=coords,
-    t=faces,
-    U=U,
-    azim=30,
-    elev=30,
-    title="Numerical Solution using $N = "+ str(coords.shape[0])+"$",
-    edgecolor="k",
-    alpha= 0.5
+#%% contourf
+fig = plt.figure()
+ax = plt.axes()
+cont = ax.tricontourf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    cmap="plasma",
+    levels=11
 )
+fig.colorbar(cont)
+cont = ax.tricontour(
+    coords[:,0],
+    coords[:,1],
+    U,
+    colors="k",
+    levels=11
+)
+plt.clabel(cont, inline=True)
+plt.axis("equal")
+plt.xlabel("x")
+plt.ylabel("y")
 
-# from plots import contourf_plot
-# contourf_plot(p=p, U=U, levels=30, title="Numerical Solution using $N = "+ str(coords.shape[0])+"$")
-# plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
-# plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
-
+#%% exact solution
 def exact(p):
     if p[0] <= 0.5 + 0.1 * np.sin(6.28 * p[1]):
         value = np.sin(np.pi*p[0]) * np.sin(np.pi*p[1])
@@ -318,27 +358,42 @@ Uex = np.zeros(shape=U.shape)
 for i in range(U.shape[0]):
     Uex[i] = exact(coords[i,:])
 
-tri_surface(
-    p=coords,
-    t=faces,
-    U=Uex,
-    azim=30,
-    elev=30,
-    title="Exact Solution using $N = "+ str(coords.shape[0])+"$",
-    edgecolor="k"
+#%% 3D plotting
+fig = plt.figure()
+ax = plt.axes(projection="3d")
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    U,
+    color="r",
+    alpha=0.5,
+    aa=False,
+    label="Numerical"
 )
+ax.plot_trisurf(
+    coords[:,0],
+    coords[:,1],
+    Uex,
+    color="b",
+    alpha=0.5,
+    aa=False,
+    label="Exact"
+)
+plt.legend()
+ax.view_init(20,-50)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("U")
 
-# contourf_plot(p=p, U=U, levels=30, title="Exact Solution using $N = "+ str(coords.shape[0])+"$")
-# plt.scatter(coords[bil,0], coords[bil,1], alpha=0.45, s=5, color="black")
-# plt.scatter(coords[bir,0], coords[bir,1], alpha=0.45, s=5, color="white")
 
-# Root Mean Square Error
+#%% Root Mean Square Error
 RMSE = np.sqrt(
     np.mean(
         (Uex - U)**2
     )
 )
 
+print("N = %d" %coords.shape[0])
 print("\n===============")
 print("RMSE = %1.4e" %RMSE)
 print("===============")
@@ -349,24 +404,11 @@ print("\n===============")
 print("Norm 2 = %1.4e" %n2)
 print("===============")
 
+# Norm infty
+ninf = np.max(np.max(np.abs(Uex-U)))
+print("\n===============")
+print("Norm 2 = %1.4e" %ninf)
+print("===============")
 
-# Different errors with different number of nodes N
-# mesh.el_size_factor & N & RMSE & norm2
-errors = np.array([
-    [0.5, 115, 0.54716, 0.58677],
-    [0.1, 291, 0.37866, 0.64594],
-    [0.05, 589, 0.36473, 0.88518],
-    [0.04, 1057, 0.37382, 0.12153],
-    [0.03, 1713, 0.37808, 0.15648],
-    [0.02, 3359, 0.37121, 0.21514],
-    [0.01, 12495, 0.37350, 0.41751]
-])
-
-plt.figure()
-plt.plot(errors[:,1], errors[:,2], "-o", label="RMSE")
-plt.plot(errors[:,1], errors[:,3], "-o", label="norm 2")
-plt.legend()
-plt.xlabel("Number of nodes $N$")
-plt.ylabel("Error")
-
+#%%
 plt.show()
