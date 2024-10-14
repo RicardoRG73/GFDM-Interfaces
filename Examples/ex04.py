@@ -1,3 +1,4 @@
+#%% importing needed libraries
 import calfem.geometry as cfg
 import calfem.mesh as cfm
 import calfem.vis_mpl as cfv
@@ -6,12 +7,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse as sp
 
-plt.style.use(["seaborn-v0_8-darkgrid", "seaborn-v0_8-colorblind"])#, "seaeborn-v0_8-paper"])
+plt.style.use("seaborn-v0_8")
 plt.rcParams["legend.frameon"] = True
 plt.rcParams["legend.shadow"] = True
-cmap_color = "plasma"
 
-g = cfg.Geometry()  # Create a GeoData object that holds the geometry.
+import GFDMI
+
+from scipy.integrate import solve_ivp
+
+#%% creating geometry object
+g = cfg.Geometry()
+
+# points
 g.point([3, 0]) #0
 g.point([21, 0]) #1
 g.point([29, 0]) #2
@@ -21,117 +28,120 @@ g.point([27, 10]) #5
 g.point([23, 10]) #6
 g.point([19, 8]) #7
 
-Hizq=108
-Hdere=100
-Hnbottom=101
-Hntop=102
+# custom markers
+left_b=108
+right_b=100
+bottom_b=101
+top_b=102
 
-
-g.spline([0, 1], marker=Hnbottom) #0
-g.spline([1, 2], marker=Hnbottom) #1
-g.spline([2, 3], marker=Hnbottom) #2
-g.spline([3, 4], marker=Hdere,el_on_curve=15) #3
-g.spline([4, 5], marker=Hntop) #4
-g.spline([5, 6], marker=Hntop) #5
-g.spline([6, 7], marker=Hntop, el_on_curve=10) #6
-g.spline([7, 0], marker=Hizq,el_on_curve=15) #7
+# lines with markers
+g.spline([0, 1], marker=bottom_b) #0
+g.spline([1, 2], marker=bottom_b) #1
+g.spline([2, 3], marker=bottom_b) #2
+g.spline([3, 4], marker=right_b,el_on_curve=15) #3
+g.spline([4, 5], marker=top_b) #4
+g.spline([5, 6], marker=top_b) #5
+g.spline([6, 7], marker=top_b, el_on_curve=10) #6
+g.spline([7, 0], marker=left_b,el_on_curve=15) #7
 g.spline([1, 6]) #8
 g.spline([2, 5]) #9
 
+# material markers
 Rockfill=100
 Clay=102
  
+# surfaces with markers
 g.surface([0, 8, 6, 7],marker=Rockfill) #0
 g.surface([1, 9, 5, 8],marker=Clay) #1
 g.surface([2,3,4,9],marker=Rockfill) #2
 
+#%% ploting geometry
 cfv.figure(fig_size=(6,4))
 cfv.title('Geometry')
 cfv.draw_geometry(g)
 
-
+#%% creating mesh object
 mesh = cfm.GmshMesh(g)
 
-mesh.el_type = 2  #2= triangulo de 3 nodos 9= triangulo de 6 nodos
+mesh.el_type = 2  #2: 3-nodes triangle; 9: 6-nodes triangle
 mesh.dofs_per_node = 1  # Degrees of freedom per node.
 mesh.el_size_factor = 2.0  # Factor that changes element sizes.
 
 coords, edof, dofs, bdofs, element_markers = mesh.create()
 
-#Acondiciomamiento de la malla
-nnel=len(edof[1,:])
-Elementos=np.zeros(edof.shape,dtype=int)
+# mesh conditioning
+nodes_in_triangle = edof.shape[1]
+triangles = np.zeros(edof.shape, dtype=int)
 for i,elem in enumerate(edof):
-        if nnel==3:
-            Elementos[i,:]=elem[1],elem[0],elem[2]
-        elif nnel==6:
-            Elementos[i,:]=elem[1],elem[3],elem[0],elem[5],elem[2],elem[4]
-Elementos=Elementos-1  
-bdofs={frontera:np.array(bdofs[frontera])-1 for frontera in bdofs}
+    triangles[i,:] = elem[1],elem[0],elem[2]
+triangles = triangles-1
+bdofs = {frontera : np.array(bdofs[frontera])-1 for frontera in bdofs}
 
+
+#%% mesh plot
 cfv.figure(fig_size=(6,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
 
 
-bizq = np.asarray(bdofs[Hizq])
-bder = np.asarray(bdofs[Hdere])
-bnb = np.asarray(bdofs[Hnbottom])
-bnb = np.setdiff1d(bnb , np.intersect1d(bnb,bizq))
-bnb = np.setdiff1d(bnb , np.intersect1d(bnb,bder))
-bnt = np.asarray(bdofs[Hntop])
-bnt = np.setdiff1d(bnt , np.intersect1d(bnt,bizq))
-bnt = np.setdiff1d(bnt , np.intersect1d(bnt,bder))
+#%% identification of boundaries
+left_nodes = np.asarray(bdofs[left_b])
+right_nodes = np.asarray(bdofs[right_b])
+bottom_nodes = np.asarray(bdofs[bottom_b])
+bottom_nodes = np.setdiff1d(bottom_nodes , np.intersect1d(bottom_nodes,left_nodes))
+bottom_nodes = np.setdiff1d(bottom_nodes , np.intersect1d(bottom_nodes,right_nodes))
+top_nodes = np.asarray(bdofs[top_b])
+top_nodes = np.setdiff1d(top_nodes , np.intersect1d(top_nodes,left_nodes))
+top_nodes = np.setdiff1d(top_nodes , np.intersect1d(top_nodes,right_nodes))
 
 
-B = np.hstack((bizq, bder, bnb, bnt))
+boundaries = np.hstack((left_nodes, right_nodes, bottom_nodes, top_nodes))
 
 interior = np.setdiff1d(
     np.arange(coords.shape[0]),
-    B
+    boundaries
 )
 
-plt.figure(figsize=(6,2))
+#%% plotting nodes by color
+plt.figure()
 opacity = 0.5
 node_size = 40
 
 # plt.scatter(coords[interior,0], coords[interior,1], label="interior", alpha=opacity)
-
-plt.scatter(coords[bizq,0], coords[bizq,1], label="bizq", alpha=opacity)
-plt.scatter(coords[bder,0], coords[bder,1], label="bder", alpha=opacity)
-plt.scatter(coords[bnb,0], coords[bnb,1], label="bnb", alpha=opacity)
-plt.scatter(coords[bnt,0], coords[bnt,1], label="bnt4", alpha=opacity)
+plt.scatter(coords[left_nodes,0], coords[left_nodes,1], label="bizq", alpha=opacity)
+plt.scatter(coords[right_nodes,0], coords[right_nodes,1], label="bder", alpha=opacity)
+plt.scatter(coords[bottom_nodes,0], coords[bottom_nodes,1], label="bnb", alpha=opacity)
+plt.scatter(coords[top_nodes,0], coords[top_nodes,1], label="bnt4", alpha=opacity)
 
 plt.axis("equal")
 plt.legend()
 
-
+#%% plorblem parameters
 L = np.array([0,0,0,1,0,1])
 k = lambda p: 1
 source = lambda p: 0
-neu_cond = lambda p: 0
-dir_izq = lambda p: 8
-dir_der = lambda p: 0
+neumann_cond = lambda p: 0
+left_dirichlet = lambda p: 8
+right_dirichlet = lambda p: 0
 
-
-from GFDMI import create_system_K_F
-
+#%% boundary condition assembled as dictionaries
 material = {}
 material["0"] = [k, interior]
 
 neumann = {}
-neumann["0"] = [k, bnb, neu_cond]
-neumann["1"] = [k, bnt, neu_cond]
+neumann["0"] = [k, bottom_nodes, neumann_cond]
+neumann["1"] = [k, top_nodes, neumann_cond]
 
 dirichlet = {}
-dirichlet["izq"] = [bizq, dir_izq]
-dirichlet["der"] = [bder, dir_der]
+dirichlet["izq"] = [left_nodes, left_dirichlet]
+dirichlet["der"] = [right_nodes, right_dirichlet]
 
 interfaces = {}
 
-K,F = create_system_K_F(
+#%% system KU=F assembling
+K,F = GFDMI.create_system_K_F(
     p=coords,
-    triangles=Elementos,
+    triangles=triangles,
     L=L,
     source=source,
     materials=material,
@@ -140,29 +150,26 @@ K,F = create_system_K_F(
     interfaces = interfaces
 )
 
+#%% system KU=F solution
 U = sp.linalg.spsolve(K,F)
 
-# =============================================================================
-# Plots
-# =============================================================================
-
-# 3D
+#%% 3D plot
 plt.figure()
 ax = plt.axes(projection="3d")
 ax.plot_trisurf(
     coords[:,0],
     coords[:,1],
     U,
-    cmap=cmap_color
+    cmap="plasma"
 )
 
-# Contourf
+#%% contourf plot
 plt.figure()
 plt.tricontourf(
     coords[:,0],
     coords[:,1],
     U,
-    cmap=cmap_color,
+    cmap="plasma",
     levels=20
 )
 plt.axis("equal")
@@ -176,127 +183,72 @@ plt.tricontour(
     colors="b"
 )
 
+#%%
 # =============================================================================
-# No estacionario (Ecuación de Difusión)
+# Difusion equation
 # \nabla^2 u + f = du/dt
 # =============================================================================
-from scipy.integrate import solve_ivp
-
-F = F.toarray().flatten()
-
-
 t = [0,200]
 fun = lambda t,U: K@U - F
 U0 = np.zeros(coords.shape[0])
-U0[bizq] = 8
-U0[bder] = 0
-# U0[bnb] = 8*(1 - coords[bnb,0]/40)
-# U0[bnt] = coords[bnt,1]
+U0[left_nodes] = 8
+U0[right_nodes] = 0
 
+#%% initial condition plot
 plt.figure()
 ax = plt.axes(projection="3d")
 ax.plot_trisurf(
     coords[:,0],
     coords[:,1],
     U0,
-    cmap=cmap_color
+    cmap="plasma"
 )
-ax.set_title("Condición inicial $U_0$")
+ax.set_title("Initial Condition $U_0$")
 
+#%% solution
 sol = solve_ivp(fun, t, U0)
 
-U2 = sol.y
-# plots
-cmap_color = "summer"
+U_difussion = sol.y
+
+#%% plots
 fig = plt.figure()
-# 1
-indice = 0
-ax = plt.subplot(2,2,1)
-ax.tricontourf(
-    coords[:,0],
-    coords[:,1],
-    U2[:,indice],
-    cmap=cmap_color,
-    levels=20
-)
-ax.tricontour(
-    coords[:,0],
-    coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
-    levels=[0.0],
-    colors="b"
-)
-ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
-# 2
-indice = U2.shape[1] // 3
-ax = plt.subplot(2,2,2)
-ax.tricontourf(
-    coords[:,0],
-    coords[:,1],
-    U2[:,indice],
-    cmap=cmap_color,
-    levels=20
-)
-ax.tricontour(
-    coords[:,0],
-    coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
-    levels=[0.0],
-    colors="b"
-)
-ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
-# 3
-indice = U2.shape[1] // 3 * 2
-ax = plt.subplot(2,2,3)
-ax.tricontourf(
-    coords[:,0],
-    coords[:,1],
-    U2[:,indice],
-    cmap=cmap_color,
-    levels=20
-)
-ax.tricontour(
-    coords[:,0],
-    coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
-    levels=[0.0],
-    colors="b"
-)
-ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
-# 4
-indice = -1
-ax = plt.subplot(2,2,4)
-ax.tricontourf(
-    coords[:,0],
-    coords[:,1],
-    U2[:,indice],
-    cmap=cmap_color,
-    levels=20
-)
-ax.tricontour(
-    coords[:,0],
-    coords[:,1],
-    (U2[:,indice] - coords[:,1])*9.81,
-    levels=[0.0],
-    colors="b"
-)
-ax.axis("equal")
-ax.set_title("$t = %1.4f$" %sol.t[indice])
 
+final_index = sol.t.shape[0] - 1
+times_index = [0, final_index//10, final_index//3, final_index]
 
+for i,t_i in enumerate(times_index):
+    ax = plt.subplot(2,2,i+1)
+    ax.tricontourf(
+        coords[:,0],
+        coords[:,1],
+        U_difussion[:,t_i],
+        cmap="plasma",
+        levels=20
+    )
+    ax.tricontour(
+        coords[:,0],
+        coords[:,1],
+        (U_difussion[:,t_i] - coords[:,1])*9.81,
+        levels=[0.0],
+        colors="k",
+        linewidths=0.5
+    )
+    ax.axis("equal")
+    ax.set_title("$t = %1.2f$" %sol.t[t_i])
+
+#%% 3d plot at final time
 plt.figure()
 ax = plt.axes(projection="3d")
 ax.plot_trisurf(
     coords[:,0],
     coords[:,1],
-    U2[:,-1],
+    U_difussion[:,final_index],
     cmap="plasma"
 )
-ax.set_title("Sol $U$ en $t=%1.4f$" %sol.t[-1])
+ax.set_title("Solution $U$ at time $t=%1.2f$" %sol.t[-1])
 
-print("\n\nNúmero de condición de K: %1.3e" %np.linalg.cond(K.toarray()))
+# condition number
+print("\n\n Condition number cond(K): %1.3e" %np.linalg.cond(K.toarray()))
 
 plt.show()
+# %%
