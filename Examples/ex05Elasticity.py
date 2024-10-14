@@ -6,15 +6,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse as sp
 
-plt.style.use(["seaborn-v0_8-darkgrid", "seaborn-v0_8-colorblind", "seaborn-v0_8-talk"])
+plt.style.use(["seaborn-v0_8-darkgrid", "seaborn-v0_8-colorblind"])
 plt.rcParams["legend.frameon"] = True
 plt.rcParams["legend.shadow"] = True
 plt.rcParams["legend.framealpha"] = 0.1
-color_map = "plasma"
 
 import calfem.geometry as cfg
 import calfem.mesh as cfm
 import calfem.vis_mpl as cfv
+
+import GFDMI
 
 #%%
 # =============================================================================
@@ -32,7 +33,7 @@ g.point([0,0.4])      # 3
 left = 10
 right = 11
 top = 12
-bottom = 15
+bottom = 13
 
 g.line([0,1], marker=bottom)    # 0
 g.line([1,2], marker=right)     # 1
@@ -45,9 +46,9 @@ mat0 = 0
 g.surface([0,1,2,3], marker=mat0)
 
 
-# plotting
+#%% plotting geometry
 cfv.figure()
-cfv.title('g')
+cfv.title('Geometry')
 cfv.draw_geometry(g, draw_axis=True)
 
 #%%
@@ -64,9 +65,9 @@ verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
     mesh.el_type
 )
 
-# plotting
+#%% plotting mesh
 cfv.figure()
-cfv.title('Malla $N=%d' %coords.shape[0] +'$')
+cfv.title('Mesh $N=%d' %coords.shape[0] +'$')
 cfv.draw_mesh(
     coords=coords,
     edof=edof,
@@ -78,139 +79,158 @@ cfv.draw_mesh(
 #%%
 # =============================================================================
 # Nodes identification by color
-# nodesl: left
-# nodesr: right
-# nodesb: bottom
-# nodest: top
 # =============================================================================
-corners = np.array([0,1,2,3])
+corner_nodes = np.array([0,1,2,3])
 
-nodesl = np.asarray(bdofs[left]) - 1
-nodesl = np.setdiff1d(nodesl, corners)
-nodesl = np.hstack((nodesl, [0,3]))
+left_nodes = np.asarray(bdofs[left]) - 1
+left_nodes = np.setdiff1d(left_nodes, corner_nodes)
+left_nodes = np.hstack((left_nodes, [0,3]))
 
-nodesr = np.asarray(bdofs[right]) - 1
-nodesr = np.setdiff1d(nodesr, corners)
-nodesr = np.hstack((nodesr, [1,2]))
+right_nodes = np.asarray(bdofs[right]) - 1
+right_nodes = np.setdiff1d(right_nodes, corner_nodes)
+right_nodes = np.hstack((right_nodes, [1,2]))
 
-nodesb = np.asarray(bdofs[bottom]) - 1
-nodesb = np.setdiff1d(nodesb, corners)
+bottom_nodes = np.asarray(bdofs[bottom]) - 1
+bottom_nodes = np.setdiff1d(bottom_nodes, corner_nodes)
 
-nodest = np.asarray(bdofs[top]) - 1
-nodest = np.setdiff1d(nodest, corners)
+top_nodes = np.asarray(bdofs[top]) - 1
+top_nodes = np.setdiff1d(top_nodes, corner_nodes)
 
-boundaries = (nodesl, nodesr, nodesb, nodest, corners)
-Boundaries = np.hstack(boundaries)
+boundaries = np.hstack((
+    left_nodes,
+    right_nodes,
+    bottom_nodes,
+    top_nodes
+))
 
 N = coords.shape[0]
-interior = np.setdiff1d(np.arange(N), Boundaries)
+interior_nodes = np.setdiff1d(np.arange(N), boundaries)
 
-plt.figure(figsize=(9,3))
+#%% plotting nodes by color
+plt.figure()
+nodes_to_plot = (
+    interior_nodes,
+    left_nodes,
+    right_nodes,
+    bottom_nodes,
+    top_nodes
+)
+labels = (
+    "Interior",
+    "Left",
+    "Right",
+    "Bottom",
+    "Top"
+)
+for nodes,label in zip(nodes_to_plot, labels):
+    plt.scatter(
+        coords[nodes,0],
+        coords[nodes,1],
+        label=label,
+        alpha=0.75,
+        s=10
+)
 plt.axis("equal")
-s = 30
-plt.scatter(coords[interior,0], coords[interior,1], label="interior", s=s)
-plt.scatter(coords[nodesb,0], coords[nodesb,1], label="bottom", s=s)
-plt.scatter(coords[nodesr,0], coords[nodesr,1], label="right", s=s)
-plt.scatter(coords[nodest,0], coords[nodest,1], label="top", s=s)
-plt.scatter(coords[nodesl,0], coords[nodesl,1], label="left", s=s)
-plt.legend(loc="center")
-
+plt.legend()
 #%%
 # =============================================================================
 # Problem parameters
+# u: horizontal displacement
+# v: vertical displacement
 # =============================================================================
 k = lambda p: 1
-fu = lambda p: 0
-fv = lambda p: 0#-3e-8
+source_u = lambda p: 0
+source_v = lambda p: 0#-3e-8
 
+# E: young modulus, nu: poisson constant
 E = 22e9
 nu = 0.2
 
+# PS: plain-strain matrix
 alpha = E * (1 - nu) / (1 + nu) / (1 - 2*nu)
-
-a = np.array([
+PS = np.array([
     [1, nu/(1-nu), 0],
     [nu/(1-nu), 1, 0],
     [0, 0, (1-2*nu)/2/(1-nu)]
 ])
+PS *= alpha
 
-a *= alpha
-
-L11 = [0,0,0,a[0,0],a[0,2]+a[2,0],a[2,2]]
-L12 = [0,0,0,a[0,2],a[0,1]+a[2,2],a[2,1]]
-L21 = [0,0,0,a[2,0],a[1,0]+a[2,2],a[1,2]]
-L22 = [0,0,0,a[2,2],a[1,2]+a[2,1],a[1,1]]
+# coefitiens vectors L
+L11 = [0,0,0,PS[0,0],PS[0,2]+PS[2,0],PS[2,2]]
+L12 = [0,0,0,PS[0,2],PS[0,1]+PS[2,2],PS[2,1]]
+L21 = [0,0,0,PS[2,0],PS[1,0]+PS[2,2],PS[1,2]]
+L22 = [0,0,0,PS[2,2],PS[1,2]+PS[2,1],PS[1,1]]
 
 #%%
 # =============================================================================
 # Boundary conditions
 # =============================================================================
-fDir = lambda p: 0
-fNeu = lambda p: 0
-fNeu_load = lambda p: 5e-15
+dirichlet_condition = lambda p: 0
+neumann_condition = lambda p: 0
+neumann_load = lambda p: 5e-15
 
 #%%
 # =============================================================================
 # Discretization with GFDM
 # =============================================================================
-from GFDMI import create_system_K_F
-
+# boundary condition assembled as dictionaries
 materials = {}
-materials["0"] = [k, interior]
+materials["0"] = [k, interior_nodes]
 
-uDir = {}
-uDir["left"] = [nodesl, fDir]
+u_Dir = {}
+u_Dir["left"] = [left_nodes, dirichlet_condition]
 # uDir["right"] = [nodesr, fDir]
 
-uNeu = {}
-uNeu["bottom"] = [k, nodesb, fNeu]
-uNeu["right"] = [k, nodesr, fNeu]
-uNeu["top"] = [k, nodest, fNeu]
+u_Neu = {}
+u_Neu["bottom"] = [k, bottom_nodes, neumann_condition]
+u_Neu["right"] = [k, right_nodes, neumann_condition]
+u_Neu["top"] = [k, top_nodes, neumann_condition]
 
-vDir = {}
-vDir["left"] = [nodesl, fDir]
+v_Dir = {}
+v_Dir["left"] = [left_nodes, dirichlet_condition]
 # vDir["right"] = [nodesr, fDir]
 
-vNeu = {}
-vNeu["bottom"] = [k, nodesb, fNeu]
-vNeu["right"] = [k, nodesr, fNeu]
-vNeu["top"] = [k, nodest, fNeu_load]
+v_Neu = {}
+v_Neu["bottom"] = [k, bottom_nodes, neumann_condition]
+v_Neu["right"] = [k, right_nodes, neumann_condition]
+v_Neu["top"] = [k, top_nodes, neumann_load]
 
-D11, F11 = create_system_K_F(
+#%% sistem KU=F assembling
+D11, F11 = GFDMI.create_system_K_F(
     p=coords,
     triangles=faces,
     L=L11,
-    source=fu,
+    source=source_u,
     materials=materials,
-    dirichlet_boundaries=uDir,
-    neumann_boundaries=uNeu
+    dirichlet_boundaries=u_Dir,
+    neumann_boundaries=u_Neu
 )
-D12, F12 = create_system_K_F(
+D12, F12 = GFDMI.create_system_K_F(
     p=coords,
     triangles=faces,
     L=L12,
-    source=fv,
+    source=source_v,
     materials=materials,
-    dirichlet_boundaries=vDir,
-    neumann_boundaries=vNeu
+    dirichlet_boundaries=v_Dir,
+    neumann_boundaries=v_Neu
 )
-D21, F21 = create_system_K_F(
+D21, F21 = GFDMI.create_system_K_F(
     p=coords,
     triangles=faces,
     L=L21,
-    source=fu,
+    source=source_u,
     materials=materials,
-    dirichlet_boundaries=uDir,
-    neumann_boundaries=uNeu
+    dirichlet_boundaries=u_Dir,
+    neumann_boundaries=u_Neu
 )
-D22, F22 = create_system_K_F(
+D22, F22 = GFDMI.create_system_K_F(
     p=coords,
     triangles=faces,
     L=L12,
-    source=fv,
+    source=source_v,
     materials=materials,
-    dirichlet_boundaries=vDir,
-    neumann_boundaries=vNeu
+    dirichlet_boundaries=v_Dir,
+    neumann_boundaries=v_Neu
 )
 
 #%%
@@ -219,15 +239,15 @@ D22, F22 = create_system_K_F(
 # =============================================================================
 D12u = D12.copy()
 D12u = sp.lil_matrix(D12u)
-D12u[Boundaries,:] = 0
+D12u[boundaries,:] = 0
 F12u = F12.copy()
-F12u[Boundaries] = 0
+F12u[boundaries] = 0
 
 D21v = D21.copy()
 D21v = sp.lil_matrix(D21v)
-D21v[Boundaries,:] = 0
+D21v[boundaries,:] = 0
 F21v = F21.copy()
-F21v[Boundaries] = 0
+F21v[boundaries] = 0
 
 A = sp.vstack((
     sp.hstack((D11, D12u)),
@@ -250,17 +270,6 @@ U = sp.linalg.spsolve(A,F)
 u = U[:N]
 v = U[N:]
 displacement = np.sqrt(u**2 + v**2)
-fig = plt.figure(figsize=(9,3))
-plt.axis("equal")
-plt.title("Displacement")
-cont = plt.tricontourf(
-    coords[:,0],
-    coords[:,1],
-    displacement,
-    cmap=color_map,
-    levels=20
-)
-fig.colorbar(cont)
 
 fig = plt.figure(figsize=(9,3))
 plt.axis("equal")
@@ -269,7 +278,7 @@ scat = plt.scatter(
     coords[:,0]+u,
     coords[:,1]+v,
     c=displacement,
-    cmap=color_map
+    cmap="plasma"
 )
 fig.colorbar(scat)
 
