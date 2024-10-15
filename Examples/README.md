@@ -1,7 +1,9 @@
 # Examples
+
 To illustrate the capability of GFDMI in solving 2D differential equations, we provide the following examples.
 
 # Example 00
+
 For this first example, we solve the Poisson equation with a permeability coefficient $k=1$:
 
 $$
@@ -37,6 +39,6 @@ For Neumann boundary conditions, the normal vectors are computed. In this exampl
 
 After assembling the system $KU=F$ and solving it, we obtain $U$, which is plotted as both a contour plot and a 3D surface:
 ![](figures/00contourf.jpg)
-![](figures/003d.jpg)
+<img title="" src="figures/00-3d.jpg" alt="" data-align="inline">
 
 # Example 01

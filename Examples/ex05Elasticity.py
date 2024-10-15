@@ -50,6 +50,7 @@ g.surface([0,1,2,3], marker=mat0)
 cfv.figure()
 cfv.title('Geometry')
 cfv.draw_geometry(g, draw_axis=True)
+plt.savefig("figures/05geometry.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -75,6 +76,8 @@ cfv.draw_mesh(
     el_type=mesh.el_type,
     filled=True
 )
+plt.savefig("figures/05mesh.jpg", dpi=300)
+
 
 #%%
 # =============================================================================
@@ -132,6 +135,8 @@ for nodes,label in zip(nodes_to_plot, labels):
 )
 plt.axis("equal")
 plt.legend()
+plt.savefig("figures/05nodes.jpg", dpi=300)
+
 #%%
 # =============================================================================
 # Problem parameters
@@ -281,6 +286,7 @@ scat = plt.scatter(
     cmap="plasma"
 )
 fig.colorbar(scat)
+plt.savefig("figures/05displacement.jpg", dpi=300)
 
 #%%
 plt.show()

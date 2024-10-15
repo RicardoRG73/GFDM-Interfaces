@@ -182,18 +182,19 @@ plt.savefig("figures/00contourf.jpg", dpi=300)
 #%% 3d plot
 fig = plt.figure()
 ax = plt.axes(projection="3d")
-ax.plot_trisurf(
+surface = ax.plot_trisurf(
     coords[:,0],
     coords[:,1],
     U,
     cmap="plasma",
     aa=False
 )
+fig.colorbar(surface)
 ax.view_init(30,-130)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("U")
-plt.savefig("figures/003d.jpg", dpi=300)
+plt.savefig("figures/00-3d.jpg", dpi=300)
 
 
 #%%

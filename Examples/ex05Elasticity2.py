@@ -52,6 +52,8 @@ g.struct_surf([0,1,2,3], marker=mat0)
 cfv.figure()
 cfv.title('Geometry')
 cfv.draw_geometry(g, draw_axis=True)
+plt.savefig("figures/05bgeometry.jpg", dpi=300)
+
 
 #%%
 # =============================================================================
@@ -77,6 +79,8 @@ cfv.draw_mesh(
     el_type=mesh.el_type,
     filled=True
 )
+plt.savefig("figures/05bmesh.jpg", dpi=300)
+
 
 #%%
 # =============================================================================
@@ -134,6 +138,8 @@ for nodes,label in zip(nodes_to_plot, labels):
 )
 plt.axis("equal")
 plt.legend()
+plt.savefig("figures/05bnodes.jpg", dpi=300)
+
 #%%
 # =============================================================================
 # Problem parameters
@@ -333,6 +339,7 @@ plt.plot(
     alpha=0.25,
     color="k"
 )
+plt.savefig("figures/05bdisplacement.jpg", dpi=300)
 
 #%%
 plt.show()
