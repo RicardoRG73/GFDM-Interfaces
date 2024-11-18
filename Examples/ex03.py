@@ -149,7 +149,7 @@ geometry.surface(left_surf_index, marker=right_domain)
 cfv.figure(fig_size=(4,4))
 cfv.title('Geometry')
 cfv.draw_geometry(geometry)
-plt.savefig("figures/03geometry.jpg", dpi=300)
+# plt.savefig("figures/03geometry.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -173,7 +173,7 @@ verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
 cfv.figure(fig_size=(8,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
-plt.savefig("figures/03mesh.jpg", dpi=300)
+# plt.savefig("figures/03mesh.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -221,7 +221,7 @@ for b,label in zip(nodes, labels):
 plt.axis("equal")
 plt.title("$N = %d$" %coords.shape[0])
 plt.legend()
-plt.savefig("figures/03nodes.jpg", dpi=300)
+# plt.savefig("figures/03nodes.jpg", dpi=300)
 
 #%% plotting normal vectors
 plt.figure()
@@ -248,7 +248,7 @@ for nodes,label,color in zip(nodes_to_plot,labels,colors):
     )
 plt.axis("equal")
 plt.legend()
-plt.savefig("figures/03normal.jpg", dpi=300)
+# plt.savefig("figures/03normal.jpg", dpi=300)
 
 
 #%% Problem parameters
@@ -345,7 +345,7 @@ plt.clabel(cont, inline=True)
 plt.axis("equal")
 plt.xlabel("x")
 plt.ylabel("y")
-plt.savefig("figures/03contourf.jpg", dpi=300)
+# plt.savefig("figures/03contourf.jpg", dpi=300)
 
 #%% exact solution
 def exact(p):
@@ -388,7 +388,7 @@ ax.view_init(20,-50)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("U")
-plt.savefig("figures/03-3d.jpg", dpi=300)
+# plt.savefig("figures/03-3d.jpg", dpi=300)
 
 #%% Root Mean Square Error
 RMSE = np.sqrt(

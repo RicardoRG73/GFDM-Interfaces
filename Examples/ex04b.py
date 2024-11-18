@@ -60,7 +60,7 @@ g.surface([2,3,4,9],marker=Rockfill) #2
 cfv.figure(fig_size=(6,4))
 cfv.title('Geometry')
 cfv.draw_geometry(g)
-plt.savefig("figures/04bgeometry.jpg", dpi=300)
+# plt.savefig("figures/04bgeometry.jpg", dpi=300)
 
 #%% mesh creation
 # =============================================================================
@@ -86,7 +86,7 @@ bdofs = {frontera : np.array(bdofs[frontera])-1 for frontera in bdofs}
 cfv.figure(fig_size=(6,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
-plt.savefig("figures/04bmesh.jpg", dpi=300)
+# plt.savefig("figures/04bmesh.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -158,7 +158,7 @@ for nodes,label in zip(nodes_to_plot, labels):
 )
 plt.axis("equal")
 plt.legend()
-plt.savefig("figures/04bnodes.jpg", dpi=300)
+# plt.savefig("figures/04bnodes.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -222,7 +222,7 @@ ax.plot_trisurf(
     cmap="plasma"
 )
 plt.title(r"Stationary solution $\nabla^2 u = 0$")
-plt.savefig("figures/04b-3d.jpg", dpi=300)
+# plt.savefig("figures/04b-3d.jpg", dpi=300)
 
 #%% contourf
 plt.figure()
@@ -244,7 +244,7 @@ plt.tricontour(
     colors="b"
 )
 plt.title(r"Stationary solution $\nabla^2 u = 0$")
-plt.savefig("figures/04bcontourf.jpg", dpi=300)
+# plt.savefig("figures/04bcontourf.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -298,7 +298,7 @@ for i,t_i in enumerate(times_index):
     )
     ax.axis("equal")
     ax.set_title("$t = %1.2f$" %sol.t[t_i])
-plt.savefig("figures/04bdiffussion.jpg", dpi=300)
+# plt.savefig("figures/04bdiffussion.jpg", dpi=300)
 
 #%% 3d plot at final time
 plt.figure()

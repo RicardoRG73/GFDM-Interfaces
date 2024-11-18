@@ -60,7 +60,7 @@ geometry.surface([4,5,6,7], marker=mat1)        # 1
 cfv.figure(fig_size=(8,4))
 cfv.title('Geometry')
 cfv.draw_geometry(geometry)
-plt.savefig("figures/01geometry.jpg", dpi=300)
+# plt.savefig("figures/01geometry.jpg", dpi=300)
 
 #%% Creating mesh
 mesh = cfm.GmshMesh(geometry)
@@ -81,7 +81,7 @@ verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
 cfv.figure(fig_size=(8,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
-plt.savefig("figures/01mesh.jpg", dpi=300)
+# plt.savefig("figures/01mesh.jpg", dpi=300)
 
 #%% Nodes indexing separated by boundary conditions
 # Dirichlet nodes
@@ -156,7 +156,7 @@ for b,label in zip(nodes, labels):
 plt.axis("equal")
 plt.title("$N = %d$" %coords.shape[0])
 plt.legend(loc="center")
-plt.savefig("figures/01nodes.jpg", dpi=300)
+# plt.savefig("figures/01nodes.jpg", dpi=300)
 
 #%% plotting normal vectors at interface
 plt.figure()
@@ -183,7 +183,7 @@ for nodes,label,color in zip(nodes_to_plot,labels,colors):
     )
 plt.axis("equal")
 plt.legend()
-plt.savefig("figures/01normal.jpg", dpi=300)
+# plt.savefig("figures/01normal.jpg", dpi=300)
 
 #%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
@@ -267,7 +267,7 @@ plt.clabel(cont, inline=True)
 plt.axis("equal")
 plt.xlabel("x")
 plt.ylabel("y")
-plt.savefig("figures/01contourf.jpg", dpi=300)
+# plt.savefig("figures/01contourf.jpg", dpi=300)
 
 #%% 3d plot
 fig = plt.figure()
@@ -284,7 +284,7 @@ ax.view_init(30,-120)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("U")
-plt.savefig("figures/01-3d.jpg", dpi=300)
+# plt.savefig("figures/01-3d.jpg", dpi=300)
 
 #%%
 plt.show()

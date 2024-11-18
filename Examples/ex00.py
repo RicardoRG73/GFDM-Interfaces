@@ -45,7 +45,7 @@ geometry.surface([0,1,2,3,4], marker=mat0)  # 0
 cfv.figure()
 cfv.title('Geometry')
 cfv.draw_geometry(geometry)
-plt.savefig("figures/00geometry.jpg", dpi=300)
+# plt.savefig("figures/00geometry.jpg", dpi=300)
 
 #%% Creating mesh from geometry object
 mesh = cfm.GmshMesh(geometry)
@@ -66,7 +66,7 @@ verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
 cfv.figure(fig_size=(8,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
-plt.savefig("figures/00mesh.jpg", dpi=300)
+# plt.savefig("figures/00mesh.jpg", dpi=300)
 
 #%% Nodes indexing separated by boundary conditions
 left_nodes = np.asarray(bdofs[left]) - 1                # index of nodes on left boundary
@@ -99,7 +99,7 @@ for b,label in zip(nodes, labels):
 plt.axis("equal")
 plt.title("$N = %d$" %coords.shape[0])
 plt.legend(loc="center")
-plt.savefig("figures/00nodes.jpg", dpi=300)
+# plt.savefig("figures/00nodes.jpg", dpi=300)
 
 #%% ploting normal vectors
 plt.figure()
@@ -114,7 +114,7 @@ plt.quiver(
     color="#394C89"
 )
 plt.axis("equal")
-plt.savefig("figures/00normal.jpg", dpi=300)
+# plt.savefig("figures/00normal.jpg", dpi=300)
 
 #%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
@@ -177,7 +177,7 @@ plt.clabel(cont, inline=True)
 plt.axis("equal")
 plt.xlabel("x")
 plt.ylabel("y")
-plt.savefig("figures/00contourf.jpg", dpi=300)
+# plt.savefig("figures/00contourf.jpg", dpi=300)
 
 #%% 3d plot
 fig = plt.figure()
@@ -194,7 +194,7 @@ ax.view_init(30,-130)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("U")
-plt.savefig("figures/00-3d.jpg", dpi=300)
+# plt.savefig("figures/00-3d.jpg", dpi=300)
 
 
 #%%

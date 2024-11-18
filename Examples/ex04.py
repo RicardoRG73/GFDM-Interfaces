@@ -59,7 +59,7 @@ g.surface([2,3,4,9],marker=Rockfill) #2
 cfv.figure(fig_size=(6,4))
 cfv.title('Geometry')
 cfv.draw_geometry(g)
-plt.savefig("figures/04geometry.jpg", dpi=300)
+# plt.savefig("figures/04geometry.jpg", dpi=300)
 
 #%% creating mesh object
 mesh = cfm.GmshMesh(g)
@@ -83,7 +83,7 @@ bdofs = {frontera : np.array(bdofs[frontera])-1 for frontera in bdofs}
 cfv.figure(fig_size=(6,4))
 cfv.title('Mesh')
 cfv.draw_mesh(coords=coords, edof=edof, dofs_per_node=mesh.dofs_per_node, el_type=mesh.el_type, filled=True)
-plt.savefig("figures/04mesh.jpg", dpi=300)
+# plt.savefig("figures/04mesh.jpg", dpi=300)
 
 #%% identification of boundaries
 left_nodes = np.asarray(bdofs[left_b])
@@ -116,7 +116,7 @@ plt.scatter(coords[top_nodes,0], coords[top_nodes,1], label="bnt4", alpha=opacit
 
 plt.axis("equal")
 plt.legend()
-plt.savefig("figures/04nodes.jpg", dpi=300)
+# plt.savefig("figures/04nodes.jpg", dpi=300)
 
 #%% plorblem parameters
 L = np.array([0,0,0,1,0,1])
@@ -164,7 +164,7 @@ ax.plot_trisurf(
     U,
     cmap="plasma"
 )
-plt.savefig("figures/04-3d.jpg", dpi=300)
+# plt.savefig("figures/04-3d.jpg", dpi=300)
 
 #%% contourf plot
 plt.figure()
@@ -185,7 +185,7 @@ plt.tricontour(
     levels=[0.0],
     colors="b"
 )
-plt.savefig("figures/04contourf.jpg", dpi=300)
+# plt.savefig("figures/04contourf.jpg", dpi=300)
 
 #%%
 # =============================================================================
@@ -239,7 +239,7 @@ for i,t_i in enumerate(times_index):
     )
     ax.axis("equal")
     ax.set_title("$t = %1.2f$" %sol.t[t_i])
-plt.savefig("figures/04diffussion.jpg", dpi=300)
+# plt.savefig("figures/04diffussion.jpg", dpi=300)
 
 #%% 3d plot at final time
 plt.figure()
