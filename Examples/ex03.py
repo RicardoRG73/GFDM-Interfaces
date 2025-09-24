@@ -62,18 +62,18 @@ import GFDMIex03
 geometry = cfg.Geometry()
 
 # points: square domain
-geometry.point([0,0])    # 0
-geometry.point([1,0])     # 1
-geometry.point([1,1])      # 2
-geometry.point([0,1])     # 3
+geometry.point([0,0])       # 0
+geometry.point([1,0])       # 1
+geometry.point([1,1])       # 2
+geometry.point([0,1])       # 3
 
 # points: interface-boundaries intersection
 delta_interface = 0.01
 
-geometry.point([0.5 - delta_interface, 0])     # 4
-geometry.point([0.5 - delta_interface, 1])     # 5
-geometry.point([0.5 + delta_interface, 0])     # 6
-geometry.point([0.5 + delta_interface, 1])     # 7
+geometry.point([ 0.5 - delta_interface , 0 ])     # 4
+geometry.point([ 0.5 - delta_interface , 1 ])     # 5
+geometry.point([ 0.5 + delta_interface , 0 ])     # 6
+geometry.point([ 0.5 + delta_interface , 1 ])     # 7
 
 # lines: square domain
 dirichlet = 10

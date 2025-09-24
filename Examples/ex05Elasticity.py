@@ -153,14 +153,15 @@ nu = 0.2
 
 # PS: plain-strain matrix
 alpha = E * (1 - nu) / (1 + nu) / (1 - 2*nu)
-PS = np.array([
+PS = alpha * np.array([
     [1, nu/(1-nu), 0],
     [nu/(1-nu), 1, 0],
     [0, 0, (1-2*nu)/2/(1-nu)]
 ])
-PS *= alpha
 
 # coefitiens vectors L
+# L = [A,B,C,D,E,F]
+# Au + Bux + Cuy + Duxx + Euxy + Fuyy
 L11 = [0,0,0,PS[0,0],PS[0,2]+PS[2,0],PS[2,2]]
 L12 = [0,0,0,PS[0,2],PS[0,1]+PS[2,2],PS[2,1]]
 L21 = [0,0,0,PS[2,0],PS[1,0]+PS[2,2],PS[1,2]]

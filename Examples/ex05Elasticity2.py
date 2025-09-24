@@ -45,7 +45,7 @@ g.line([3,0], marker=left, el_on_curve=1)      # 3
 
 # surfaces
 mat0 = 0
-g.struct_surf([0,1,2,3], marker=mat0)
+g.struct_surface([0,1,2,3], marker=mat0)
 
 
 #%% plotting geometry

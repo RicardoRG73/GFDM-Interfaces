@@ -218,7 +218,7 @@ def create_system_K_F(
                     (p[biA,0]-p[i,0])**2 + (p[biA,1]-p[i,1])**2
                 )
             )]
-            K[biA_i,I0] += Gamma - Gg * Gamma_n
+            K[biA_i,I0] = K[biA_i,I0].toarray() + Gamma - Gg * Gamma_n
             F[biA_i] = F[biA_i].toarray() + source(p[i]) - Gg * beta_i
             K[i,biA_i] = -1
             K[i,i] = 1
