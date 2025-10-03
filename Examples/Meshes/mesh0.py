@@ -1,5 +1,5 @@
-save_mesh_to_file = True
-show_plots = False
+save_mesh_to_file = False
+show_plots = True
 
 #%% Importing Needed libraries
 import numpy as np
@@ -78,17 +78,16 @@ interior_nodes = faces[elementmarkers == mat0]
 interior_nodes = interior_nodes.flatten()
 interior_nodes = np.setdiff1d(interior_nodes,B)
 
+nodes = (left_nodes,right_nodes,bottom_nodes,top_nodes,interior_nodes)
+labels = ("Left", "Right", "Bottom", "Top", "Interior")
+
 if save_mesh_to_file:
     import json
-    data_to_save = {
-        "left_nodes": left_nodes.tolist(),
-        "right_nodes": right_nodes.tolist(),
-        "bottom_nodes": bottom_nodes.tolist(),
-        "top_nodes": top_nodes.tolist(),
-        "interior_nodes": interior_nodes.tolist(),
-        "coords": coords.tolist(),
-        "triangles": faces.tolist()
-    }
+    data_to_save = {}
+    for b,label in zip(nodes, labels):
+        data_to_save[label.lower()+"_nodes"] = b.tolist()
+    data_to_save["coords"] = coords.tolist()
+    data_to_save["triangles"] = faces.tolist()
     with open('Examples/Meshes/mesh0.json', 'w') as file:
         json.dump(data_to_save, file, indent=4)
     print("\n ============\n Mesh saved \n ============")
@@ -109,8 +108,6 @@ if show_plots:
 
     # ploting boundaries in different color
     plt.figure()
-    nodes = (left_nodes,right_nodes,bottom_nodes,top_nodes,interior_nodes)
-    labels = ("Left", "Right", "Bottom", "Top", "Interior")
     for b,label in zip(nodes, labels):
         plt.scatter(coords[b,0], coords[b,1], label=label)
     plt.axis("equal")
