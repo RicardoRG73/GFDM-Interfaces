@@ -11,134 +11,15 @@ plt.rcParams["legend.frameon"] = True
 plt.rcParams["legend.shadow"] = True
 plt.rcParams["legend.framealpha"] = 0.1
 
-import calfem.geometry as cfg
-import calfem.mesh as cfm
-import calfem.vis_mpl as cfv
-
 import GFDMI_GN
 
-#%%
-# =============================================================================
-# Geometry
-# =============================================================================
-g = cfg.Geometry()
+# loading mesh from file
+import json
+with open("Examples/Meshes/mesh4.json","r") as f:
+    mesh_data = json.load(f)
 
-# points
-omega_length = 4
-omega_height = 1
-g.point([0, 0])      # 0
-g.point([omega_length, 0])      # 1
-g.point([omega_length, omega_height])      # 2
-g.point([0, omega_height])      # 3
-
-# lines
-left = 10
-right = 11
-top = 12
-bottom = 15
-
-g.line([0,1], marker=bottom, el_on_curve=4)    # 0
-g.line([1,2], marker=right, el_on_curve=1)     # 1
-g.line([2,3], marker=top, el_on_curve=4)       # 2
-g.line([3,0], marker=left, el_on_curve=1)      # 3
-
-
-# surfaces
-mat0 = 0
-g.struct_surface([0,1,2,3], marker=mat0)
-
-
-#%% plotting geometry
-cfv.figure()
-cfv.title('Geometry')
-cfv.draw_geometry(g, draw_axis=True)
-# plt.savefig("figures/05bgeometry.jpg", dpi=300)
-
-
-#%%
-# =============================================================================
-# Mesh
-# =============================================================================
-mesh = cfm.GmshMesh(g,el_size_factor=0.4)
-
-coords, edof, dofs, bdofs, elementmarkers = mesh.create()
-verts, faces, vertices_per_face, is_3d = cfv.ce2vf(
-    coords,
-    edof,
-    mesh.dofs_per_node,
-    mesh.el_type
-)
-
-#%% plotting mesh
-cfv.figure()
-cfv.title('Malla $N=%d' %coords.shape[0] +'$')
-cfv.draw_mesh(
-    coords=coords,
-    edof=edof,
-    dofs_per_node=mesh.dofs_per_node,
-    el_type=mesh.el_type,
-    filled=True
-)
-# plt.savefig("figures/05bmesh.jpg", dpi=300)
-
-
-#%%
-# =============================================================================
-# Nodes identification by color
-# =============================================================================
-corner_nodes = np.array([0,1,2,3])
-
-left_nodes = np.asarray(bdofs[left]) - 1
-left_nodes = np.setdiff1d(left_nodes, corner_nodes)
-left_nodes = np.hstack((left_nodes, [0,3]))
-
-right_nodes = np.asarray(bdofs[right]) - 1
-right_nodes = np.setdiff1d(right_nodes, corner_nodes)
-right_nodes = np.hstack((right_nodes, [1,2]))
-
-bottom_nodes = np.asarray(bdofs[bottom]) - 1
-bottom_nodes = np.setdiff1d(bottom_nodes, corner_nodes)
-
-top_nodes = np.asarray(bdofs[top]) - 1
-top_nodes = np.setdiff1d(top_nodes, corner_nodes)
-
-boundaries = np.hstack((
-    left_nodes,
-    right_nodes,
-    bottom_nodes,
-    top_nodes
-))
-
-N = coords.shape[0]
-interior_nodes = np.setdiff1d(np.arange(N), boundaries)
-
-#%% plotting nodes by color
-plt.figure()
-nodes_to_plot = (
-    interior_nodes,
-    left_nodes,
-    right_nodes,
-    bottom_nodes,
-    top_nodes
-)
-labels = (
-    "Interior",
-    "Left",
-    "Right",
-    "Bottom",
-    "Top"
-)
-for nodes,label in zip(nodes_to_plot, labels):
-    plt.scatter(
-        coords[nodes,0],
-        coords[nodes,1],
-        label=label,
-        alpha=0.75,
-        s=100
-)
-plt.axis("equal")
-plt.legend()
-# plt.savefig("figures/05bnodes.jpg", dpi=300)
+for key in mesh_data.keys():
+    globals()[key] = np.array(mesh_data[key])
 
 #%%
 # =============================================================================
@@ -246,7 +127,7 @@ BNeum = np.hstack((bottom_nodes, right_nodes, top_nodes))
 #%% system KU=F assembling
 K11, F11 = GFDMI_GN.create_system_K_F(
     p=coords,
-    triangles=faces,
+    triangles=triangles,
     L=L11,
     source=source_u,
     materials=materials,
@@ -256,7 +137,7 @@ K11, F11 = GFDMI_GN.create_system_K_F(
 )
 K12, F12 = GFDMI_GN.create_system_K_F(
     p=coords,
-    triangles=faces,
+    triangles=triangles,
     L=L12,
     source=source_v,
     materials=materials,
@@ -266,7 +147,7 @@ K12, F12 = GFDMI_GN.create_system_K_F(
 )
 K21, F21 = GFDMI_GN.create_system_K_F(
     p=coords,
-    triangles=faces,
+    triangles=triangles,
     L=L21,
     source=source_u,
     materials=materials,
@@ -276,7 +157,7 @@ K21, F21 = GFDMI_GN.create_system_K_F(
 )
 K22, F22 = GFDMI_GN.create_system_K_F(
     p=coords,
-    triangles=faces,
+    triangles=triangles,
     L=L12,
     source=source_v,
     materials=materials,
@@ -319,6 +200,7 @@ U = sp.linalg.spsolve(K,F)
 # =============================================================================
 # Solution plot
 # =============================================================================
+N = coords.shape[0]
 u = U[:N]
 v = U[N:]
 displacement = np.sqrt(u**2 + v**2)
@@ -341,7 +223,4 @@ plt.plot(
 )
 # plt.savefig("figures/05bdisplacement.jpg", dpi=300)
 
-#%%
 plt.show()
-
-#%%
