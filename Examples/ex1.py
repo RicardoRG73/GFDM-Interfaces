@@ -14,18 +14,8 @@ import json
 with open('Examples/Meshes/mesh1.json', 'r') as file:
     loaded_data = json.load(file)
 
-left_nodes = np.array(loaded_data["left_nodes"])
-right_nodes = np.array(loaded_data["right_nodes"])
-bottom_left_nodes = np.array(loaded_data["bottom_left_nodes"])
-top_left_nodes = np.array(loaded_data["top_left_nodes"])
-bottom_right_nodes = np.array(loaded_data["bottom_right_nodes"])
-top_right_nodes = np.array(loaded_data["top_right_nodes"])
-left_interface_nodes = np.array(loaded_data["left_interface_nodes"])
-right_interface_nodes = np.array(loaded_data["right_interface_nodes"])
-interior_nodes_mat0 = np.array(loaded_data["interior_material_0_nodes"])
-interior_nodes_mat1 = np.array(loaded_data["interior_material_1_nodes"])
-coords = np.array(loaded_data["coords"])
-triangles = np.array(loaded_data["triangles"])
+for key in loaded_data.keys():
+    globals()[key] = np.array(loaded_data[key])
 
 #%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates
@@ -46,8 +36,8 @@ alpha = lambda p: 0.5
 
 #%% assembling boundary conditions in dictionaries
 materials = {}
-materials['material0'] = [permeability_mat0, interior_nodes_mat0]
-materials['material1'] = [permeability_mat1, interior_nodes_mat1]
+materials['material0'] = [permeability_mat0, interior_material_0_nodes]
+materials['material1'] = [permeability_mat1, interior_material_1_nodes]
 
 neumann_boundaries = {}
 neumann_boundaries['bottom_left'] =   [permeability_mat0,   bottom_left_nodes,  bottom_condition]
@@ -67,8 +57,8 @@ interfaces["interface"] = [
     right_interface_nodes,
     beta,
     alpha,
-    interior_nodes_mat0,
-    interior_nodes_mat1
+    interior_material_0_nodes,
+    interior_material_1_nodes
 ]
 
 

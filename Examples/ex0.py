@@ -13,13 +13,8 @@ import GFDMI
 with open('Examples/Meshes/mesh0.json', 'r') as file:
     loaded_data = json.load(file)
 
-left_nodes = np.array(loaded_data["left_nodes"])
-right_nodes = np.array(loaded_data["right_nodes"])
-bottom_nodes = np.array(loaded_data["bottom_nodes"])
-top_nodes = np.array(loaded_data["top_nodes"])
-interior_nodes = np.array(loaded_data["interior_nodes"])
-coords = np.array(loaded_data["coords"])
-triangles = np.array(loaded_data["triangles"])
+for key in loaded_data.keys():
+    globals()[key] = np.array(loaded_data[key])
 
 #%% Problem parameters
 # L = [A, B, C, 2D, E, 2F] is the coefitiens vector from GFDM that aproximates

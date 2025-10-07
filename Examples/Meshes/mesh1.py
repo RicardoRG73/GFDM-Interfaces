@@ -1,5 +1,5 @@
-save_mesh_to_file = True
-show_plots = False
+save_mesh_to_file = False
+show_plots = True
 
 #%% Importing needed libraries
 import numpy as np
