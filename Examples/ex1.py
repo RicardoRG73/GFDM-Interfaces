@@ -7,7 +7,7 @@ plt.rcParams["legend.shadow"] = True
 plt.rcParams["figure.autolayout"] = True
 import scipy.sparse as sp
 
-import GFDMI
+from GFDMI import GFDMI_2D_problem as gfdmi
 
 #%% Loading mesh from file
 import json
@@ -30,49 +30,38 @@ right_condition = lambda p: 1
 bottom_condition = lambda p: 0
 top_condition = lambda p: 0
 # flux difference at interface du/dn|_{mat0} - du/dn|_{mat1} = beta
-beta = lambda p: 0
+flux_difference = lambda p: 0
 # solution diference at interface u_{mat0} - u_{mat1} = alpha
-alpha = lambda p: 0.5
+solution_difference = lambda p: 0.5
 
-#%% assembling boundary conditions in dictionaries
-materials = {}
-materials['material0'] = [permeability_mat0, interior_material_0_nodes]
-materials['material1'] = [permeability_mat1, interior_material_1_nodes]
 
-neumann_boundaries = {}
-neumann_boundaries['bottom_left'] =   [permeability_mat0,   bottom_left_nodes,  bottom_condition]
-neumann_boundaries['top_left'] =      [permeability_mat0,   top_left_nodes,     top_condition]
-neumann_boundaries['top_right_'] =    [permeability_mat1,   top_right_nodes,    top_condition]
-neumann_boundaries['bottom_right'] =  [permeability_mat1,   bottom_right_nodes, bottom_condition]
+#%% System `KU=F` assembling
+problem = gfdmi(coords,triangles,L,source)
 
-dirichlet_boundaries = {}
-dirichlet_boundaries["left"] =  [left_nodes,    left_condition]
-dirichlet_boundaries["right"] = [right_nodes,   right_condition]
+problem.add_material('material0', permeability_mat0, interior_material_0_nodes)
+problem.add_material('material1', permeability_mat1, interior_material_1_nodes)
 
-interfaces = {}
-interfaces["interface"] = [
+problem.add_neumann_boundary('bottom_left', permeability_mat0, bottom_left_nodes, bottom_condition)
+problem.add_neumann_boundary('top_left', permeability_mat0, top_left_nodes, top_condition)
+problem.add_neumann_boundary('top_right', permeability_mat1, top_right_nodes, top_condition)
+problem.add_neumann_boundary('bottom_right', permeability_mat1, bottom_right_nodes, bottom_condition)
+
+problem.add_dirichlet_boundary('left', left_nodes, left_condition)
+problem.add_dirichlet_boundary('right', right_nodes, right_condition)
+
+problem.add_interface(
+    'interface',
     permeability_mat0,
     permeability_mat1,
     left_interface_nodes,
     right_interface_nodes,
-    beta,
-    alpha,
+    flux_difference,
+    solution_difference,
     interior_material_0_nodes,
     interior_material_1_nodes
-]
-
-
-#%% System `KU=F` assembling
-K,F = GFDMI.create_system_K_F(
-    p=coords,
-    triangles=triangles,
-    L=L,
-    source=source,
-    materials=materials,
-    neumann_boundaries=neumann_boundaries,
-    dirichlet_boundaries=dirichlet_boundaries,
-    interfaces = interfaces
 )
+
+K,F = problem.create_system_K_F()
 
 #%% Solution
 U = sp.linalg.spsolve(K,F)
