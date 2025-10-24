@@ -8,7 +8,7 @@ plt.rcParams["legend.frameon"] = True
 plt.rcParams["legend.shadow"] = True
 plt.rcParams["figure.autolayout"] = True
 
-import GFDMI
+from GFDMI import GFDMI_2D_problem as gfdmi
 
 with open('Examples/Meshes/mesh0.json', 'r') as file:
     loaded_data = json.load(file)
@@ -28,29 +28,20 @@ right_condition = lambda p: 0
 bottom_condition = lambda p: p[0] * 0.5
 top_condition = lambda p: p[0]
 
-# assembling conditions into dictionaries
-materials = {}
-materials["0"] = [permeability, interior_nodes]
+# problem definition
+problem = gfdmi(coords,triangles,L,source)
 
-neumann_boundaries = {}
-neumann_boundaries["right"] = [permeability, right_nodes, right_condition]
+problem.add_material('0', permeability, interior_nodes)
 
-dirichlet_boundaries = {}
-dirichlet_boundaries["0"] = [left_nodes, left_condition]
-dirichlet_boundaries["top"] = [top_nodes, top_condition]
-dirichlet_boundaries["bottom"] = [bottom_nodes, bottom_condition]
+problem.add_neumann_boundary('right', permeability, right_nodes, right_condition)
+
+problem.add_dirichlet_boundary('left', left_nodes, left_condition)
+problem.add_dirichlet_boundary('top', top_nodes, top_condition)
+problem.add_dirichlet_boundary('bottom', bottom_nodes, bottom_condition)
 
 
 #%% System `KU=F` assembling
-K,F = GFDMI.create_system_K_F(
-    p=coords,
-    triangles=triangles,
-    L=L,
-    source=source,
-    materials=materials,
-    neumann_boundaries=neumann_boundaries,
-    dirichlet_boundaries=dirichlet_boundaries
-)
+K,F = problem.create_system_K_F()
 
 #%% Solution to KU=F
 U = sp.linalg.spsolve(K,F)

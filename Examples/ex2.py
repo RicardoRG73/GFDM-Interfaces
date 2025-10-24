@@ -48,7 +48,7 @@ plt.rcParams["legend.shadow"] = True
 plt.rcParams["figure.autolayout"] = True
 import scipy.sparse as sp
 
-import GFDMIex02
+from GFDMI import GFDMI_2D_problem as gfdmi
 
 #%% Loading mesh from file
 import json
@@ -77,9 +77,17 @@ def dirichlet_condition(p):
         )
     return value
 
+# normal vectors at interface left nodes
+def compute_normal_vecs(b):
+    normal_vecs = np.zeros((b.shape[0],2))
+    for i in range(b.shape[0]):
+        normal_vecs[i,:] = np.array([ 1,  -0.628*np.cos(6.28*coords[b[i],1]) ])
+        normal_vecs[i,:] *= 1 / np.linalg.norm(normal_vecs[i,:])
+    return normal_vecs
+
 # flux diference du/dn|_{left} - du/dn|_{rignt} = beta 
 def beta(p):
-    n = GFDMIex02.normal_vectors(interface_left_nodes, coords)
+    normal_vecs = compute_normal_vecs(interface_left_nodes)
     i = np.argmin(
         np.sqrt(
             (coords[interface_left_nodes,0]-p[0])**2
@@ -90,42 +98,42 @@ def beta(p):
     value = np.pi * (
         np.cos(np.pi*p[0])
         * np.exp(np.pi*p[1])
-        * n[i,0]
-        + np.sin(np.pi*p[0])
+        * normal_vecs[i,0]
+        +
+        np.sin(np.pi*p[0])
         * np.exp(np.pi*p[1])
-        * n[i,1]
+        * normal_vecs[i,1]
     )
     return value
 
 # solution difference u|_{left} - u|_{right} = alpha
 alpha = lambda p: -np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
 
-#%% assembling boundary conditions in dictionaries
-materials = {}
-materials['material_left'] = [permeability_left, omega_plus_nodes]
-materials['material_right'] = [permeability_right, omega_minus_nodes]
+# problem definition
+problem = gfdmi(coords, triangles, L, source)
 
-neumann_boundaries = {}
+problem.add_material('material_left', permeability_left, omega_plus_nodes)
+problem.add_material('material_right', permeability_right, omega_minus_nodes)
 
-dirichlet_boundaries = {}
-dirichlet_boundaries["dirichlet"] = [dirichlet_nodes, dirichlet_condition]
+problem.add_dirichlet_boundary('dirichlet', dirichlet_nodes, dirichlet_condition)
 
-interfaces = {}
-interfaces["interface0"] = [permeability_left, permeability_right, interface_left_nodes, interface_right_nodes, beta, alpha, omega_plus_nodes, omega_minus_nodes]
+problem.add_interface(
+    'interface0',
+    permeability_left,
+    permeability_right,
+    interface_left_nodes,
+    interface_right_nodes,
+    beta,
+    alpha,
+    omega_plus_nodes,
+    omega_minus_nodes
+)
+
+problem.normal_vectors = compute_normal_vecs
 
 
 #%% Assembling system `KU=F`
-from GFDMIex02 import create_system_K_F
-K,F = create_system_K_F(
-    p=coords,
-    triangles=triangles,
-    L=L,
-    source=source,
-    materials=materials,
-    neumann_boundaries=neumann_boundaries,
-    dirichlet_boundaries=dirichlet_boundaries,
-    interfaces = interfaces
-)
+K,F = problem.create_system_K_F()
 
 #%% Solution of system `KU=F`
 U = sp.linalg.spsolve(K,F)

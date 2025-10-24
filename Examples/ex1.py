@@ -35,7 +35,7 @@ flux_difference = lambda p: 0
 solution_difference = lambda p: 0.5
 
 
-#%% System `KU=F` assembling
+#%% problem definition
 problem = gfdmi(coords,triangles,L,source)
 
 problem.add_material('material0', permeability_mat0, interior_material_0_nodes)
@@ -61,6 +61,7 @@ problem.add_interface(
     interior_material_1_nodes
 )
 
+#%% System `KU=F` assembling
 K,F = problem.create_system_K_F()
 
 #%% Solution
