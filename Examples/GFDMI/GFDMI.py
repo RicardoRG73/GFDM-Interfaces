@@ -405,7 +405,7 @@ class GFDMI_2D_problem:
             k = neumann_boundaries[boundary][0]
             b = neumann_boundaries[boundary][1]
             u_n = neumann_boundaries[boundary][2]
-            n = GFDMI_2D_problem.normal_vectors(b)
+            n = self.normal_vectors(b)
             for i in b:
                 I = GFDMI_2D_problem.support_nodes(i,triangles)
                 ni = n[b==i][0]
@@ -459,7 +459,7 @@ class GFDMI_2D_problem:
             F = sp.lil_matrix(F)
             
             # material 0
-            n = GFDMI_2D_problem.normal_vectors(b)
+            n = self.normal_vectors(b)
             for i in b:
                 I0 = GFDMI_2D_problem.support_nodes(i,triangles)
                 I0 = np.setdiff1d(I0,m1)

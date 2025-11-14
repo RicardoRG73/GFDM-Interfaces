@@ -10,7 +10,7 @@ plt.style.use("seaborn-v0_8")
 
 from scipy.integrate import solve_ivp
 
-import GFDMI
+from GFDMI import GFDMI_2D_problem as gfdmi
 
 
 # loading mesh data
@@ -54,16 +54,19 @@ interfaces = {}
 interfaces["A"] = [kr, kc, left_interface_nodes, beta, rock_nodes, clay_nodes]
 interfaces["B"] = [kc, kr, right_interface_nodes, beta, clay_nodes, rock_nodes]
 
+problem = gfdmi(
+    coords,
+    triangles,
+    L,
+    source
+)
+
 #%% system KU=F assembling
-K,F = GFDMI.create_system_K_F_cont_U(
-    p=coords,
-    triangles=triangles,
-    L=L,
-    source=source,
-    materials=material,
-    neumann_boundaries=neumann,
-    dirichlet_boundaries=dirichlet,
-    interfaces = interfaces
+K,F = problem.create_system_K_F_cont_U(
+    material,
+    neumann,
+    dirichlet,
+    interfaces
 )
 
 #%% system KU=F solution
