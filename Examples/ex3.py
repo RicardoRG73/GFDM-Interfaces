@@ -38,21 +38,21 @@ beta = lambda p: 0
 # =============================================================================
 # Assembling and solving system KU=F
 # =============================================================================
-material = {}
-material["rock"] = [kr, rock_nodes]
-material["clay"] = [kc, clay_nodes]
+# material = {}
+# material["rock"] = [kr, rock_nodes]
+# material["clay"] = [kc, clay_nodes]
 
-neumann = {}
-neumann["0"] = [kr, bottom_nodes, neumann_cond]
-neumann["1"] = [kr, top_nodes, neumann_cond]
+# neumann = {}
+# neumann["0"] = [kr, bottom_nodes, neumann_cond]
+# neumann["1"] = [kr, top_nodes, neumann_cond]
 
-dirichlet = {}
-dirichlet["izq"] = [left_nodes, left_dirichlet]
-dirichlet["der"] = [right_nodes, right_dirichlet]
+# dirichlet = {}
+# dirichlet["izq"] = [left_nodes, left_dirichlet]
+# dirichlet["der"] = [right_nodes, right_dirichlet]
 
-interfaces = {}
-interfaces["A"] = [kr, kc, left_interface_nodes, beta, rock_nodes, clay_nodes]
-interfaces["B"] = [kc, kr, right_interface_nodes, beta, clay_nodes, rock_nodes]
+# interfaces = {}
+# interfaces["A"] = [kr, kc, left_interface_nodes, beta, rock_nodes, clay_nodes]
+# interfaces["B"] = [kc, kr, right_interface_nodes, beta, clay_nodes, rock_nodes]
 
 problem = gfdmi(
     coords,
@@ -61,13 +61,42 @@ problem = gfdmi(
     source
 )
 
-#%% system KU=F assembling
-K,F = problem.create_system_K_F_cont_U(
-    material,
-    neumann,
-    dirichlet,
-    interfaces
+problem.add_material("rock", kr, rock_nodes)
+problem.add_material("clay", kc, clay_nodes)
+
+problem.add_neumann_boundary("bottom", kr, bottom_nodes, neumann_cond)
+problem.add_neumann_boundary("top", kr, top_nodes, neumann_cond)
+
+problem.add_dirichlet_boundary("left", left_nodes, left_dirichlet)
+problem.add_dirichlet_boundary("right", right_nodes, right_dirichlet)
+
+problem.add_interface(
+    "left_interface",
+    kr,
+    kc,
+    left_interface_nodes,
+    None,
+    beta,
+    None,
+    rock_nodes,
+    clay_nodes
 )
+
+problem.add_interface(
+    "right_interface",
+    kc,
+    kr,
+    right_interface_nodes,
+    None,
+    beta,
+    None,
+    clay_nodes,
+    rock_nodes
+)
+
+
+#%% system KU=F assembling
+K,F = problem.create_system_K_F_cont_U()
 
 #%% system KU=F solution
 U = sp.linalg.spsolve(K,F)

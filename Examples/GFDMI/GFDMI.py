@@ -352,13 +352,7 @@ class GFDMI_2D_problem:
 
         return K, F
 
-    def create_system_K_F_cont_U(
-            self,
-            materials,
-            neumann_boundaries,
-            dirichlet_boundaries,
-            interfaces={}
-        ):
+    def create_system_K_F_cont_U(self):
         """ 
         Assembles `K` and `F` for system  `KU=F`, where `U` is continuos
         """
@@ -366,6 +360,11 @@ class GFDMI_2D_problem:
         triangles = self.triangles
         L = self.L
         source = self.source
+
+        materials = self.materials
+        neumann_boundaries = self.neumann_boundaries
+        dirichlet_boundaries = self.dirichlet_boundaries
+        interfaces = self.interfaces
 
         L[3] *= 2
         L[5] *= 2
@@ -451,9 +450,11 @@ class GFDMI_2D_problem:
             k0 = interfaces[interface][0]
             k1 = interfaces[interface][1]
             b = interfaces[interface][2]
-            beta = interfaces[interface][3]
-            m0 = interfaces[interface][4]
-            m1 = interfaces[interface][5]
+            _ = interfaces[interface][3]
+            beta = interfaces[interface][4]
+            _ = interfaces[interface][5]
+            m0 = interfaces[interface][6]
+            m1 = interfaces[interface][7]
 
             K = sp.lil_matrix(K)
             F = sp.lil_matrix(F)
