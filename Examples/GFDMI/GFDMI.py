@@ -2,7 +2,47 @@ import numpy as np
 import scipy.sparse as sp
 
 class GFDMI_2D_problem:
+    """
+    Class to model and solve 2D partial differential equations using the 
+    Generalized Finite Difference Method (GFDM) with support for material 
+    interfaces and different boundary conditions.
+
+    Attributes
+    ----------
+    coords : numpy.ndarray
+        Coordinates of the nodes in the mesh.
+    triangles : numpy.ndarray
+        Connectivity of the nodes forming the mesh triangles.
+    L : numpy.ndarray
+        Coefficients of the differential operator to be applied.
+    source : function
+        Function defining the source term of the PDE.
+    materials : dict
+        Storage for material properties and their associated interior nodes.
+    neumann_boundaries : dict
+        Storage for Neumann boundary conditions.
+    dirichlet_boundaries : dict
+        Storage for Dirichlet boundary conditions.
+    interfaces : dict
+        Storage for jump conditions and properties at material interfaces.
+    """
     def __init__(self, coords, triangles, L, source):
+        """
+        Initializes the GFDMI 2D problem.
+
+        Parameters
+        ----------
+        coords : numpy.ndarray
+            Array with shape (n, 2) containing the coordinates of the n nodes.
+        triangles : numpy.ndarray
+            Array with shape (m, 3) containing the indices of the m triangles nodes.
+        L : numpy.ndarray
+            Array containing the differential operator coefficients. 
+            For a Laplacian, it typically corresponds to [0, 0, 0, 1, 0, 1].
+        source : function
+            A function that takes a coordinate pair [x, y] and returns the source value 
+            at that point.
+        """
         self.coords = coords
         self.triangles = triangles
         self.L = L
@@ -13,7 +53,7 @@ class GFDMI_2D_problem:
         self.interfaces = {}
     
     @staticmethod
-    def support_nodes(node, triangles, min_support_nodes=5, max_iter=2):
+    def support_nodes(node, triangles, min_support_nodes=6, max_iter=2):
         """
         Returns the index of support nodes `I` corresponding to the central node
         with index `node`. 
