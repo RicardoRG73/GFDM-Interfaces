@@ -31,17 +31,17 @@ top_condition = lambda p: p[0]
 # problem definition
 problem = gfdmi(coords,triangles,L,source)
 
-problem.add_material('0', permeability, interior_nodes)
+problem.material('0', permeability, interior_nodes)
 
-problem.add_neumann_boundary('right', permeability, right_nodes, right_condition)
+problem.neumann_boundary('right', permeability, right_nodes, right_condition)
 
-problem.add_dirichlet_boundary('left', left_nodes, left_condition)
-problem.add_dirichlet_boundary('top', top_nodes, top_condition)
-problem.add_dirichlet_boundary('bottom', bottom_nodes, bottom_condition)
+problem.dirichlet_boundary('left', left_nodes, left_condition)
+problem.dirichlet_boundary('top', top_nodes, top_condition)
+problem.dirichlet_boundary('bottom', bottom_nodes, bottom_condition)
 
 
 #%% System `KU=F` assembling
-K,F = problem.create_system_K_F()
+K,F = problem.continuous_discretization()
 
 #%% Solution to KU=F
 U = sp.linalg.spsolve(K,F)

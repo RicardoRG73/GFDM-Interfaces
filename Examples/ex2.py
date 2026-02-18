@@ -112,12 +112,12 @@ alpha = lambda p: -np.sin(np.pi*p[0]) * np.exp(np.pi*p[1])
 # problem definition
 problem = gfdmi(coords, triangles, L, source)
 
-problem.add_material('material_left', permeability_left, omega_plus_nodes)
-problem.add_material('material_right', permeability_right, omega_minus_nodes)
+problem.material('material_left', permeability_left, omega_plus_nodes)
+problem.material('material_right', permeability_right, omega_minus_nodes)
 
-problem.add_dirichlet_boundary('dirichlet', dirichlet_nodes, dirichlet_condition)
+problem.dirichlet_boundary('dirichlet', dirichlet_nodes, dirichlet_condition)
 
-problem.add_interface(
+problem.interface(
     'interface0',
     permeability_left,
     permeability_right,
@@ -133,7 +133,7 @@ problem.normal_vectors = compute_normal_vecs
 
 
 #%% Assembling system `KU=F`
-K,F = problem.create_system_K_F()
+K,F = problem.discontinuous_discretization()
 
 #%% Solution of system `KU=F`
 U = sp.linalg.spsolve(K,F)
@@ -226,7 +226,7 @@ print("===============")
 # Norm infty
 ninf = np.max(np.max(np.abs(Uex-U)))
 print("\n===============")
-print("Norm 2 = %1.4e" %ninf)
+print("Norm infinity = %1.4e" %ninf)
 print("===============")
 
 #%%

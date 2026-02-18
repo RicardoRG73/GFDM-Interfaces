@@ -144,23 +144,23 @@ k = lambda p: 1
 
 problem = gfdm(coords, faces, L, source)
 
-problem.add_material("interior", k, interior_nodes)
+problem.material("interior", k, interior_nodes)
 
-problem.add_dirichlet_boundary("bottom", bottom_nodes, lambda p: 0)
-problem.add_dirichlet_boundary("right", right_nodes, lambda p: 0)
-problem.add_dirichlet_boundary("top", top_nodes, lambda p: 0)
-problem.add_dirichlet_boundary("left", left_nodes, lambda p: 0)
+problem.dirichlet_boundary("bottom", bottom_nodes, lambda p: 0)
+problem.dirichlet_boundary("right", right_nodes, lambda p: 0)
+problem.dirichlet_boundary("top", top_nodes, lambda p: 0)
+problem.dirichlet_boundary("left", left_nodes, lambda p: 0)
 
 # D2 discretization
-D2psi, F2psi = problem.create_system_K_F()
+D2psi, F2psi = problem.continuous_discretization()
 
 # Dx discretization
 problem.L = np.array([0,1,0,0,0,0])
-Dxpsi, Fxpsi = problem.create_system_K_F()
+Dxpsi, Fxpsi = problem.continuous_discretization()
 
 # Dy discretization
 problem.L = np.array([0,0,1,0,0,0])
-Dypsi, Fypsi = problem.create_system_K_F()
+Dypsi, Fypsi = problem.continuous_discretization()
 
 # C discretization
 L = np.array([0,0,0,1,0,1])
@@ -168,22 +168,22 @@ source = lambda p: 0
 k = lambda p: 1
 
 problem = gfdm(coords, faces, L, source)
-problem.add_material("interior", k, interior_nodes)
-problem.add_dirichlet_boundary("bottom", bottom_nodes, lambda p: 0)
-problem.add_dirichlet_boundary("top", top_nodes, lambda p: 1)
-problem.add_neumann_boundary("right", k, right_nodes, lambda p: 0)
-problem.add_neumann_boundary("left", k, left_nodes, lambda p: 0)
+problem.material("interior", k, interior_nodes)
+problem.dirichlet_boundary("bottom", bottom_nodes, lambda p: 0)
+problem.dirichlet_boundary("top", top_nodes, lambda p: 1)
+problem.neumann_boundary("right", k, right_nodes, lambda p: 0)
+problem.neumann_boundary("left", k, left_nodes, lambda p: 0)
 
 # D2 discretization
-D2c, F2c = problem.create_system_K_F()
+D2c, F2c = problem.continuous_discretization()
 
 # Dx discretization
 problem.L = np.array([0,1,0,0,0,0])
-Dxc, Fxc = problem.create_system_K_F()
+Dxc, Fxc = problem.continuous_discretization()
 
 # Dy discretization
 problem.L = np.array([0,0,1,0,0,0])
-Dyc, Fyc = problem.create_system_K_F()
+Dyc, Fyc = problem.continuous_discretization()
 
 # -- assemble problem --
 Ra = 400

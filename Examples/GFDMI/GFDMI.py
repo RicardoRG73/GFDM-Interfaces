@@ -53,7 +53,7 @@ class GFDMI_2D_problem:
         self.interfaces = {}
     
     @staticmethod
-    def support_nodes(node, triangles, min_support_nodes=6, max_iter=2):
+    def support_nodes(node, triangles, min_support_nodes=5, max_iter=2):
         """
         Returns the index of support nodes `I` corresponding to the central node
         with index `node`. 
@@ -138,16 +138,16 @@ class GFDMI_2D_problem:
         
         return normal_vecs
     
-    def add_material(self,label,permeability,interior_nodes):
+    def material(self,label,permeability,interior_nodes):
         self.materials[label] = [permeability, interior_nodes]
 
-    def add_neumann_boundary(self,label,permeability,boundary_nodes,condition):
+    def neumann_boundary(self,label,permeability,boundary_nodes,condition):
         self.neumann_boundaries[label] = [permeability, boundary_nodes, condition]
 
-    def add_dirichlet_boundary(self,label,boundary_nodes,condition):
+    def dirichlet_boundary(self,label,boundary_nodes,condition):
         self.dirichlet_boundaries[label] = [boundary_nodes, condition]
 
-    def add_interface(
+    def interface(
             self,
             label,
             permeability_left_mat,
@@ -170,7 +170,7 @@ class GFDMI_2D_problem:
             interior_right_nodes
         ]
 
-    def create_system_K_F(self):
+    def discontinuous_discretization(self):
         """ 
         Assembles `K` and `F` for system  `KU=F`
         """
@@ -392,7 +392,7 @@ class GFDMI_2D_problem:
 
         return K, F
 
-    def create_system_K_F_cont_U(self):
+    def continuous_discretization(self):
         """ 
         Assembles `K` and `F` for system  `KU=F`, where `U` is continuos
         """

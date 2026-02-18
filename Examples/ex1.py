@@ -38,18 +38,18 @@ solution_difference = lambda p: 0.5
 #%% problem definition
 problem = gfdmi(coords,triangles,L,source)
 
-problem.add_material('material0', permeability_mat0, interior_material_0_nodes)
-problem.add_material('material1', permeability_mat1, interior_material_1_nodes)
+problem.material('material0', permeability_mat0, interior_material_0_nodes)
+problem.material('material1', permeability_mat1, interior_material_1_nodes)
 
-problem.add_neumann_boundary('bottom_left', permeability_mat0, bottom_left_nodes, bottom_condition)
-problem.add_neumann_boundary('top_left', permeability_mat0, top_left_nodes, top_condition)
-problem.add_neumann_boundary('top_right', permeability_mat1, top_right_nodes, top_condition)
-problem.add_neumann_boundary('bottom_right', permeability_mat1, bottom_right_nodes, bottom_condition)
+problem.neumann_boundary('bottom_left', permeability_mat0, bottom_left_nodes, bottom_condition)
+problem.neumann_boundary('top_left', permeability_mat0, top_left_nodes, top_condition)
+problem.neumann_boundary('top_right', permeability_mat1, top_right_nodes, top_condition)
+problem.neumann_boundary('bottom_right', permeability_mat1, bottom_right_nodes, bottom_condition)
 
-problem.add_dirichlet_boundary('left', left_nodes, left_condition)
-problem.add_dirichlet_boundary('right', right_nodes, right_condition)
+problem.dirichlet_boundary('left', left_nodes, left_condition)
+problem.dirichlet_boundary('right', right_nodes, right_condition)
 
-problem.add_interface(
+problem.interface(
     'interface',
     permeability_mat0,
     permeability_mat1,
@@ -62,7 +62,7 @@ problem.add_interface(
 )
 
 #%% System `KU=F` assembling
-K,F = problem.create_system_K_F()
+K,F = problem.discontinuous_discretization()
 
 #%% Solution
 U = sp.linalg.spsolve(K,F)
