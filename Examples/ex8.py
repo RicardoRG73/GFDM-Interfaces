@@ -163,30 +163,34 @@ plt.tricontour(
     linewidths=1,
     alpha=0.5
 )
-solid_nodes = np.array([3,6,7,10])
-plt.tricontourf(
+
+solid_nodes = np.array([3,4,5,6,7,8,9,10])
+plt.fill(
     coords[solid_nodes,0],
     coords[solid_nodes,1],
-    np.zeros(solid_nodes.shape),
-    levels=2,
-    cmap="Greys"
-)
-solid_nodes = np.array([3,4,5,6])
-plt.tricontourf(
-    coords[solid_nodes,0],
-    coords[solid_nodes,1],
-    np.zeros(solid_nodes.shape),
-    levels=2,
-    cmap="Greys"
-)
-solid_nodes = np.array([7,8,9,10])
-plt.tricontourf(
-    coords[solid_nodes,0],
-    coords[solid_nodes,1],
-    np.zeros(solid_nodes.shape),
-    levels=2,
-    cmap="Greys"
+    color="gray"
 )
 
+# Nodes for interpolation
+xs = np.array([
+    30.        , 31.57894737, 33.15789474, 34.73684211, 36.31578947,
+    37.89473684, 39.47368421, 41.05263158, 42.63157895, 44.21052632,
+    45.78947368, 47.36842105, 48.94736842, 50.52631579, 52.10526316,
+    53.68421053, 55.26315789, 56.84210526, 58.42105263, 60.        , 30.
+])
+ys = np.array([
+    45.        , 44.77443609, 44.54887218, 44.32330827, 44.09774436,
+    43.27302632, 41.99013158, 40.70723684, 39.42434211, 38.14144737,
+    37.34817814, 37.04453441, 36.74089069, 36.43724696, 36.13360324,
+    35.82995951, 35.52631579, 35.22267206, 33.94736842, 30.        , 30.
+])
+
+plt.fill(
+    xs,
+    ys,
+    color="gray"
+)
+
+plt.savefig("Examples/figures/ex8.png", dpi=300, bbox_inches="tight")
 
 plt.show()
